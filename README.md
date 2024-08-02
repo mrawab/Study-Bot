@@ -1,1 +1,1 @@
-This is my study bot use /help to see available commands
+This is my telegram study bot use /help to see available commands
