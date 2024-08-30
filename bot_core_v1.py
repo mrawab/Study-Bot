@@ -514,7 +514,6 @@ health_check_thread = threading.Thread(target=health_check)
 health_check_thread.daemon = True  # This ensures the thread will stop when the main program exits
 health_check_thread.start()
 
-# Your existing bot code here
 
 HELP = ("This is a study bot which can do this commands :.\n"
         "/start - Start the bot\n"
@@ -532,7 +531,6 @@ HELP = ("This is a study bot which can do this commands :.\n"
        "/speech - allow you to convert text to speech\n"
        "/report - allow you to report issuses")
 
-# ... (rest of the code remains the same)
 @bot.message_handler(commands=['searchimage'])
 def search_image_command(message):
     bot.reply_to(message, "Please enter the image search query:")
@@ -580,7 +578,6 @@ def search_image(message, query):
     except ValueError:
         bot.reply_to(message, "Invalid input. Please enter a number.")
 
-# ... (rest of the code remains the same)
 
 # In-memory tracking
 online_users = set()
