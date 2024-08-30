@@ -12,9 +12,9 @@ from io import BytesIO
 from PIL import Image
 
 # Replace 'YOUR_BOT_TOKEN' with your actual bot token
-bot = telebot.TeleBot('6682482527:AAH1jipGApDYSX_4pt6o5l1dai7jTwI2Xz0')
+bot = telebot.TeleBot('TELEGRAM_BOT_API')
 # Add your Unsplash API key
-UNSPLASH_ACCESS_KEY = 'yQGFRNNIiTUJnYc3CUX1wOhDBm73gJ9ktNpdSG0wEiM'
+UNSPLASH_ACCESS_KEY = 'UNSPLASH_ACCESS_KEY'
 
 HELP = (
     "This is a study bot which can do this commands :.\n"
@@ -27,8 +27,6 @@ HELP = (
     "/searchimage - Search for and download an image\n"
     "/python - runs python code"
 )
-
-# ... (rest of the code remains the same)
 @bot.message_handler(commands=['searchimage'])
 def search_image_command(message):
     bot.reply_to(message, "Please enter the image search query:")
@@ -65,7 +63,7 @@ def search_image(message, query):
     except ValueError:
         bot.reply_to(message, "Invalid input. Please enter a number.")
 
-# ... (rest of the code remains the same)
+
 
 # In-memory tracking
 online_users = set()
