@@ -35,7 +35,7 @@ SUBSCRIBERS_FILE = "YOUR_SUBSCRIBERS_JSON"
 user_state = {}
 subjects_json = "YOUR_SUBJECTS_JSON"
 subject_file = YOUR_SUBJECTS_FILE_DIR"
-FLASHCARDS_FILE = 'flashcards.json'
+FLASHCARDS_FILE = 'YOUR_FLASHCARDS_JSON'
 
 
 # Load flashcards from the file
