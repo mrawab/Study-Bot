@@ -25,19 +25,17 @@ from pytube import YouTube
 
 
 
-bot = telebot.TeleBot('7253361872:AAF8m2MtJg3Tfki2-tBsi24HODvKgCfRR1s')
-UNSPLASH_ACCESS_KEY = 'yQGFRNNIiTUJnYc3CUX1wOhDBm73gJ9ktNpdSG0wEiM'
-GOOGLE_API_KEY = 'AIzaSyB518TPxcEOd89_e3ofChNfnOGfzZavZok'
-CSE_ID = 'e090abc52b6c042fc'
-ADMIN_CHAT_ID = (2134611910 , 804893631)
-AMAR_CHAT_ID = 804893631
-AWAB_CHAT_ID = 2134611910
-subjects_url = "subjects_url.json"
-SUBSCRIBERS_FILE = "subscribers.json"
+bot = telebot.TeleBot('TELEGRAM_BOT_API')
+UNSPLASH_ACCESS_KEY = 'UNSPLASH_ACCESS_KEY'
+GOOGLE_API_KEY = 'GOOGLE_API_KEY'
+CSE_ID = 'SEARCH_ENGINE_ID'
+ADMIN_CHAT_ID = ADMIN_CHAT_ID
+subjects_url = "YOUR_SUBJECTS_URL_JSON"
+SUBSCRIBERS_FILE = "YOUR_SUBSCRIBERS_JSON"
 flashcards = {}
 user_state = {}
-subjects_json = "subjects_json.json"
-subject_file = "/home/mrawab/subjects_pdfs"
+subjects_json = "YOUR_SUBJECTS_JSON"
+subject_file = "YOUR_SUBJECTS_FILE_DIR"
 
 
 # Start the flashcard creation
