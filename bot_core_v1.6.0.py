@@ -1,0 +1,1622 @@
+import telebot
+from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
+import sympy as sp
+import json
+import os
+import requests
+import io
+import contextlib
+import ast
+import atexit
+import threading
+import time
+import nbformat
+from nbformat import v4 as nbf
+from nbconvert import PythonExporter
+import pdf2image
+from io import BytesIO
+from PIL import Image
+from gtts import gTTS
+import zipfile
+from moviepy.editor import VideoFileClip
+import speech_recognition as sr
+import re
+from pytube import YouTube
+import random
+import csv
+import threading
+
+
+bot = telebot.TeleBot('TELEGRAM_BOT_API')
+UNSPLASH_ACCESS_KEY = 'UNSPLASH_ACCESS_KEY'
+GOOGLE_API_KEY = 'GOOGLE_API_KEY'
+CSE_ID = 'CSE_ID'
+ADMIN_CHAT_ID = (ADMIN_CHAT_ID , ADMIN_CHAT_ID, ADMIN_CHAT_ID, ADMIN_CHAT_ID)
+AMAR_CHAT_ID = None
+AWAB_CHAT_ID = Nobe
+subjects_url = "subjects_url.json"
+SUBSCRIBERS_FILE = "subscribers.json"
+user_state = {}
+pomodoro_state = {}
+subjects_json = "subjects_json.json"
+subject_file = "/home/mrawab/subjects_pdfs"
+FLASHCARDS_FILE = 'flashcards.json'
+flashcards_data = {}
+etart_time = time.time()
+
+
+
+
+# /up_time command
+@bot.message_handler(commands=['up_time'])
+def up_time(message):
+    current_time = time.time()
+    elapsed_time = current_time - start_time
+    hours, remainder = divmod(elapsed_time, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    up_time_str = f"Bot has been running for {int(hours)} hours, {int(minutes)} minutes, and {int(seconds)} seconds."
+    bot.reply_to(message, up_time_str)
+
+
+
+@bot.message_handler(commands=["about_me"])
+def about_me(message):
+    bot.reply_to(
+        message,
+        "Hi, my name is Awab Azhari. I'm the creator of this bot. Want to find out more about me? Check my website:\n"
+        "[My Website](https://awabazhari.w3spaces.com)\n"
+        "Or find my Facebook page:\n"
+        "[Facebook Page](https://www.facebook.com/awabazharii?mibextid=ZbWKwL)",
+        parse_mode="Markdown"
+    )
+
+
+# Command handler for /j2p
+@bot.message_handler(commands=['j2p'])
+def j2p_command(message):
+    bot.send_message(message.chat.id, "Please send the Jupyter notebook (.ipynb) file.")
+    bot.register_next_step_handler(message, handle_file)
+
+# Function to handle the file upload
+def handle_file(message):
+    if message.text.lower() == "/cancel":
+        cancel(message)
+        return
+    # Check if the file is attached
+    if message.document:
+        file_name = message.document.file_name
+        # Check if the file has a .ipynb extension
+        if file_name.endswith('.ipynb'):
+            file_id = message.document.file_id
+            file_info = bot.get_file(file_id)
+            downloaded_file = bot.download_file(file_info.file_path)
+
+            # Get the original file name and create the paths
+            notebook_base_name = os.path.splitext(file_name)[0]  # Remove the .ipynb extension
+            notebook_path = f"{notebook_base_name}.ipynb"
+            python_script_path = f"{notebook_base_name}.py"
+
+            # Save the notebook temporarily
+            with open(notebook_path, 'wb') as new_file:
+                new_file.write(downloaded_file)
+
+            # Convert Jupyter notebook to Python script
+            with open(notebook_path) as f:
+                notebook_content = nbformat.read(f, as_version=4)
+                exporter = PythonExporter()
+                python_code, _ = exporter.from_notebook_node(notebook_content)
+
+            # Save the Python script with the same name as the notebook
+            with open(python_script_path, "w") as f:
+                f.write(python_code)
+
+            # Send the Python script back to the user
+            with open(python_script_path, "rb") as f:
+                bot.send_document(message.chat.id, f)
+
+            # Notify the user of success
+            bot.send_message(message.chat.id, f"Conversion complete! Here's the Python script: {python_script_path}")
+
+            # Delete files after sending
+            if os.path.exists(notebook_path):
+                os.remove(notebook_path)
+            if os.path.exists(python_script_path):
+                os.remove(python_script_path)
+
+        else:
+            bot.send_message(message.chat.id, "Please send a file with a valid .ipynb extension.")
+    else:
+        bot.send_message(message.chat.id, "Please send a valid Jupyter notebook file.")
+
+
+
+
+# Command to delete a subject
+@bot.message_handler(commands=['delete_subject'])
+def delete_subject(message):
+    if not flashcards_data:
+        bot.send_message(message.chat.id, "No subjects are available to delete.")
+        return
+
+    markup = InlineKeyboardMarkup()
+    for subject in flashcards_data.keys():
+        callback_data = f"delete_{subject.replace(' ', '_')}"
+        markup.add(InlineKeyboardButton(subject, callback_data=callback_data))
+
+    bot.send_message(message.chat.id, "Select a subject to delete:", reply_markup=markup)
+
+# Callback handler for subject deletion
+@bot.callback_query_handler(func=lambda call: call.data.startswith('delete_'))
+def confirm_delete_subject(call):
+    subject_name = call.data.split('_', 1)[1].replace('_', ' ')
+
+    # Ask for confirmation before deleting the subject
+    markup = InlineKeyboardMarkup()
+    markup.add(InlineKeyboardButton("Yes", callback_data=f"confirm_delete_{subject_name.replace(' ', '_')}"))
+    markup.add(InlineKeyboardButton("No", callback_data="cancel_delete"))
+
+    bot.send_message(call.message.chat.id, f"Are you sure you want to delete the subject '{subject_name}'?", reply_markup=markup)
+
+# Handle the confirmation or cancellation of the deletion
+@bot.callback_query_handler(func=lambda call: call.data.startswith('confirm_delete_') or call.data == 'cancel_delete')
+def handle_delete_confirmation(call):
+    if call.data == 'cancel_delete':
+        bot.send_message(call.message.chat.id, "Subject deletion canceled.")
+        return
+
+    subject_name = call.data.split('_', 2)[2].replace('_', ' ')
+
+    # Delete the subject and update the JSON file
+    if subject_name in flashcards_data:
+        del flashcards_data[subject_name]
+        save_flashcards(flashcards_data)  # Save the updated data
+        bot.send_message(call.message.chat.id, f"Subject '{subject_name}' has been deleted.")
+    else:
+        bot.send_message(call.message.chat.id, f"Subject '{subject_name}' not found.")
+
+
+
+
+
+@bot.message_handler(commands=['start_pomodoro'])
+def start_pomodoro(message):
+    chat_id = message.chat.id
+    if pomodoro_state.get(chat_id, False):
+        bot.send_message(chat_id, "You already have a Pomodoro session running!")
+    else:
+        pomodoro_state[chat_id] = True
+        bot.send_message(chat_id, "Pomodoro session started! Focus for 25 minutes.")
+        threading.Thread(target=run_pomodoro, args=(chat_id,)).start()  # Run timer in separate thread
+
+def run_pomodoro(chat_id):
+    # 25 minutes of study
+    time.sleep(25 * 60)
+    if pomodoro_state.get(chat_id):
+        bot.send_message(chat_id, "25 minutes are up! Take a 5-minute break.")
+
+        # 5 minutes of break
+        time.sleep(5 * 60)
+        if pomodoro_state.get(chat_id):
+            bot.send_message(chat_id, "Break's over! Start another Pomodoro session with /start_pomodoro or stop with /stop_pomodoro.")
+            pomodoro_state[chat_id] = False  # End session after the first Pomodoro cycle
+
+@bot.message_handler(commands=['stop_pomodoro'])
+def stop_pomodoro(message):
+    chat_id = message.chat.id
+    if not pomodoro_state.get(chat_id, False):
+        bot.send_message(chat_id, "You don't have an active Pomodoro session.")
+    else:
+        pomodoro_state[chat_id] = False
+        bot.send_message(chat_id, "Pomodoro session stopped. You can start a new one with /start_pomodoro.")
+
+
+# Load subjects from JSON file
+if os.path.exists(subjects_json):
+    with open(subjects_json, 'r') as f:
+        subject_pdfs = json.load(f)
+else:
+    subject_pdfs = {}
+
+@bot.message_handler(commands=['lecture'])
+def request_code(message):
+    bot.reply_to(message, "Please enter the code for your department:")
+    bot.send_message(message.chat.id, "3030 for Electronics batch\n4040 for Mechatronics batch")
+    bot.register_next_step_handler(message, verify_code)
+
+def verify_code(message):
+    if message.text.lower() == "/cancel":
+        cancel(message)
+        return
+
+    code = message.text.strip()
+
+    if code == "3030":
+        bot.send_message(message.chat.id, "Electronics batch")
+        send_pdf_list(message, "electronics")
+    elif code == "4040":
+        bot.send_message(message.chat.id, "Mechatronics batch")
+        send_pdf_list(message, "mechatronics")
+    else:
+        bot.reply_to(message, "Invalid code. Please enter a valid code.")
+
+def send_pdf_list(message, department):
+    if department not in subject_pdfs:
+        bot.send_message(
+            message.chat.id,
+            "No subjects available for this department at the moment. Please try again later.")
+        return
+
+    markup = InlineKeyboardMarkup()
+    for subject in subject_pdfs[department].keys():
+        # Simplified callback data to avoid issues
+        callback_data = f"pdf_{department}_{subject.replace(' ', '_')}"
+        markup.add(
+            InlineKeyboardButton(subject, callback_data=callback_data))
+
+    bot.reply_to(message,
+                 "Choose a subject to download the PDFs:",
+                 reply_markup=markup)
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('pdf_'))
+def handle_pdf_download(call):
+    data = call.data.split('_')
+    department = data[1]
+    subject = ' '.join(data[2:]).replace('_', ' ')
+
+    if department in subject_pdfs and subject in subject_pdfs[department]:
+        pdf_list = subject_pdfs[department][subject]
+        if not pdf_list:
+            bot.send_message(call.message.chat.id, f"No PDFs available for {subject} at the moment.")
+            return
+
+        markup = InlineKeyboardMarkup()
+        for i, pdf in enumerate(pdf_list):
+            callback_data = f"download_{department}_{subject.replace(' ', '_')}_{i}"
+            markup.add(InlineKeyboardButton(f"Lecture {i+1}", callback_data=callback_data))
+
+        markup.add(InlineKeyboardButton("Download all as ZIP", callback_data=f"download_zip_{department}_{subject.replace(' ', '_')}"))
+        bot.send_message(call.message.chat.id, f"Choose a PDF to download for {subject}:", reply_markup=markup)
+    else:
+        bot.send_message(call.message.chat.id, f"Sorry, no PDFs available for {subject} yet.")
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('download_'))
+def download_selected_pdf(call):
+    try:
+        data = call.data.split('_')
+        action = data[3]
+        action_zip = data[1]
+        department_zip = data[2]
+        department = data[1]
+        subject = ''
+
+        if action_zip == 'zip':
+            subject = ' '.join(data[3:]).replace('_', ' ')  # Get the subject name from remaining data
+            # Debugging print statements
+            print(f"Action: {action_zip}")
+            print(f"Department: {department_zip}")
+            print(f"Subject: {subject}")
+
+            if subject in subject_pdfs.get(department_zip, {}):
+                pdf_list = subject_pdfs[department_zip][subject]
+                if pdf_list:
+                    zip_filename = f"{subject.replace(' ', '_')}.zip"
+                    with zipfile.ZipFile(zip_filename, 'w') as zipf:
+                        for pdf_path in pdf_list:
+                            zipf.write(pdf_path, os.path.basename(pdf_path))
+                    with open(zip_filename, 'rb') as zip_file:
+                        bot.send_document(call.message.chat.id, zip_file)
+                    os.remove(zip_filename)
+                else:
+                    bot.send_message(call.message.chat.id, f"No PDFs available to download as ZIP for {subject}.")
+            else:
+                bot.send_message(call.message.chat.id, f"Subject '{subject}' not found in department '{department}'.")
+        else:  # Handle individual PDF download
+            try:
+                pdf_index = int(data[-1])  # Convert the index from string to int
+                subject = ' '.join(data[2:-1]).replace('_', ' ')  # Extract subject from data
+
+                # Debugging print statements
+                print(f"Action: {action}")
+                print(f"Department: {department}")
+                print(f"Subject: {subject}")
+                print(f"PDF Index: {pdf_index}")
+
+                if subject in subject_pdfs.get(department, {}):
+                    pdf_list = subject_pdfs[department][subject]
+                    if 0 <= pdf_index < len(pdf_list):
+                        pdf_path = pdf_list[pdf_index]
+                        try:
+                            with open(pdf_path, 'rb') as pdf_file:
+                                bot.send_document(call.message.chat.id, pdf_file)
+                        except FileNotFoundError:
+                            bot.send_message(call.message.chat.id, f"Sorry, the PDF for {subject} is not available.")
+                        except Exception as e:
+                            bot.send_message(call.message.chat.id, f"An error occurred while processing your request: {e}")
+                    else:
+                        bot.send_message(call.message.chat.id, f"No valid PDF found for {subject}.")
+                else:
+                    bot.send_message(call.message.chat.id, f"Subject '{subject}' not found in department '{department}'.")
+            except ValueError:
+                bot.send_message(call.message.chat.id, "Invalid PDF index provided.")
+                return
+    except Exception as e:
+        bot.send_message(call.message.chat.id, f"An unexpected error occurred: {e}")
+        print(f"Error in callback handler: {e}")
+
+
+# Command to create a new subject
+@bot.message_handler(commands=['create_subject'])
+def create_subject(message):
+    bot.send_message(message.chat.id, "Please enter the name of the new subject:")
+    bot.register_next_step_handler(message, save_new_subject)
+
+def save_new_subject(message):
+    subject_name = message.text.strip()
+
+    # Check if the subject already exists
+    if subject_name in flashcards_data:
+        bot.send_message(message.chat.id, f"The subject '{subject_name}' already exists. Please use a different name or /add_flashcard to add flashcards.")
+    else:
+        # Create the new subject
+        flashcards_data[subject_name] = {}
+        save_flashcards(flashcards_data)  # Save the updated data
+        bot.send_message(message.chat.id, f"Subject '{subject_name}' created successfully! You can now add flashcards using /add_flashcard.")
+
+
+
+
+# Save flashcards to the file
+def save_flashcards(flashcards):
+    with open(FLASHCARDS_FILE, 'w') as f:
+        json.dump(flashcards, f)
+
+# Command to start adding flashcards
+@bot.message_handler(commands=['add_flashcard'])
+def request_subject(message):
+    if not flashcards_data:
+        bot.send_message(message.chat.id, "No subjects available. Please add a new subject first.")
+    else:
+        markup = create_subject_buttons()  # Create inline buttons for subjects
+        bot.send_message(message.chat.id, "Choose a subject to add flashcards to:", reply_markup=markup)
+
+# Callback handler for adding flashcards
+@bot.callback_query_handler(func=lambda call: call.data.startswith('add_'))
+def get_subject_for_flashcard(call):
+    subject = call.data.split('_')[1]
+    user_id = str(call.message.chat.id)
+
+    if subject not in flashcards_data:
+        flashcards_data[subject] = {}
+
+    if user_id not in flashcards_data[subject]:
+        flashcards_data[subject][user_id] = []
+
+    bot.send_message(call.message.chat.id, f"Adding flashcard to {subject}. Send the question:")
+    bot.register_next_step_handler(call.message, lambda msg: get_question(msg, subject))
+
+def get_question(message, subject):
+    question = message.text
+    bot.send_message(message.chat.id, "Now send the answer:")
+    bot.register_next_step_handler(message, lambda msg: save_flashcard(msg, question, subject))
+
+def save_flashcard(message, question, subject):
+    answer = message.text
+    user_id = str(message.chat.id)
+
+    flashcards_data[subject][user_id].append({"question": question, "answer": answer})
+    save_flashcards(flashcards_data)
+    bot.send_message(message.chat.id, f"Flashcard added to {subject}! Use /view_flashcards to see them or /add_flashcard to add more.")
+
+# Command to view flashcards
+@bot.message_handler(commands=['view_flashcards'])
+def view_flashcards(message):
+    if not flashcards_data:
+        bot.send_message(message.chat.id, "No subjects available.")
+    else:
+        markup = create_subject_buttons(action='view')  # Create inline buttons for subjects
+        bot.send_message(message.chat.id, "Choose a subject to view flashcards from:", reply_markup=markup)
+
+# Callback handler to display flashcards
+@bot.callback_query_handler(func=lambda call: call.data.startswith('view_'))
+def show_flashcards(call):
+    subject = call.data.split('_')[1]
+    user_id = str(call.message.chat.id)
+
+    user_flashcards = flashcards_data.get(subject, {}).get(user_id, [])
+
+    if not user_flashcards:
+        bot.send_message(call.message.chat.id, f"No flashcards found in {subject}.")
+    else:
+        for index, card in enumerate(user_flashcards):
+            bot.send_message(call.message.chat.id, f"Flashcard {index + 1}:\nQ: {card['question']}\nA: {card['answer']}")
+
+# Command to delete a flashcard
+@bot.message_handler(commands=['delete_flashcard'])
+def delete_flashcard(message):
+    if not flashcards_data:
+        bot.send_message(message.chat.id, "No subjects available.")
+    else:
+        markup = create_subject_buttons(action='delete')  # Create inline buttons for subjects
+        bot.send_message(message.chat.id, "Choose a subject to delete flashcards from:", reply_markup=markup)
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('delete_'))
+def select_flashcard_to_delete(call):
+    subject = call.data.split('_')[1]
+    user_id = str(call.message.chat.id)
+
+    user_flashcards = flashcards_data.get(subject, {}).get(user_id, [])
+
+    if not user_flashcards:
+        bot.send_message(call.message.chat.id, f"No flashcards found in {subject}.")
+    else:
+        markup = types.InlineKeyboardMarkup()
+        for index, card in enumerate(user_flashcards):
+            markup.add(types.InlineKeyboardButton(
+                text=f"Flashcard {index + 1}: {card['question']}",
+                callback_data=f"delete_card_{subject}_{index}"
+            ))
+        bot.send_message(call.message.chat.id, "Select a flashcard to delete:", reply_markup=markup)
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('delete_card_'))
+def delete_selected_flashcard(call):
+    _, subject, index = call.data.split('_')
+    user_id = str(call.message.chat.id)
+    index = int(index)
+
+    user_flashcards = flashcards_data[subject][user_id]
+    deleted_flashcard = user_flashcards.pop(index)
+    save_flashcards(flashcards_data)
+
+    bot.send_message(call.message.chat.id, f"Deleted flashcard:\nQ: {deleted_flashcard['question']}\nA: {deleted_flashcard['answer']}")
+
+# Import/Export flashcards as CSV
+@bot.message_handler(commands=['import_flashcards', 'export_flashcards'])
+def handle_csv(message):
+    command = message.text.strip('/')
+    if command == 'export_flashcards':
+        export_flashcards(message.chat.id)
+    elif command == 'import_flashcards':
+        bot.send_message(message.chat.id, "Send the CSV file to import flashcards:")
+        bot.register_next_step_handler(message, import_flashcards)
+
+def export_flashcards(chat_id):
+    file_path = "/tmp/flashcards.csv"
+    with open(file_path, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(['Subject', 'Question', 'Answer'])
+        for subject, users in flashcards_data.items():
+            for user_id, flashcards in users.items():
+                for card in flashcards:
+                    writer.writerow([subject, card['question'], card['answer']])
+
+    with open(file_path, 'rb') as f:
+        bot.send_document(chat_id, f)
+
+def import_flashcards(message):
+    if not message.document:
+        bot.send_message(message.chat.id, "No file sent. Please send a valid CSV file.")
+        return
+
+    file_info = bot.get_file(message.document.file_id)
+    downloaded_file = bot.download_file(file_info.file_path)
+
+    try:
+        content = downloaded_file.decode('utf-8').splitlines()
+        reader = csv.DictReader(content)
+        for row in reader:
+            subject = row['Subject']
+            question = row['Question']
+            answer = row['Answer']
+            user_id = str(message.chat.id)
+
+            if subject not in flashcards_data:
+                flashcards_data[subject] = {}
+
+            if user_id not in flashcards_data[subject]:
+                flashcards_data[subject][user_id] = []
+
+            flashcards_data[subject][user_id].append({"question": question, "answer": answer})
+
+        save_flashcards(flashcards_data)
+        bot.send_message(message.chat.id, "Flashcards imported successfully!")
+    except Exception as e:
+        bot.send_message(message.chat.id, f"Failed to import flashcards: {e}")
+
+# Command to start quiz
+@bot.message_handler(commands=['start_quiz'])
+def start_quiz(message):
+    if not flashcards_data:
+        bot.send_message(message.chat.id, "No subjects available.")
+    else:
+        markup = create_subject_buttons(action='quiz')  # Create inline buttons for subjects
+        bot.send_message(message.chat.id, "Choose a subject to start the quiz from:", reply_markup=markup)
+
+# Callback handler to start quiz on a specific subject
+@bot.callback_query_handler(func=lambda call: call.data.startswith('quiz_'))
+def quiz_subject(call):
+    subject = call.data.split('_')[1]
+    user_id = str(call.message.chat.id)
+
+    user_flashcards = flashcards_data.get(subject, {}).get(user_id, [])
+
+    if not user_flashcards:
+        bot.send_message(call.message.chat.id, f"No flashcards found in {subject} to quiz on.")
+    else:
+        bot.send_message(call.message.chat.id, f"Starting quiz for {subject}!")
+        ask_question(call.message, subject)
+
+def ask_question(message, subject):
+    user_flashcards = flashcards_data.get(subject, {}).get(str(message.chat.id), [])
+    if not user_flashcards:
+        bot.send_message(message.chat.id, "No flashcards available.")
+        return
+
+    question_card = random.choice(user_flashcards)
+    user_state[message.chat.id] = {"question": question_card, "subject": subject}
+
+    bot.send_message(message.chat.id, f"Question: {question_card['question']}")
+    bot.register_next_step_handler(message, check_answer)
+
+def check_answer(message):
+    correct_answer = user_state[message.chat.id]["question"]["answer"]
+    user_answer = message.text
+    subject = user_state[message.chat.id]["subject"]
+
+    if user_answer.lower() == correct_answer.lower():
+        bot.send_message(message.chat.id, f"Correct! Want to try another one from {subject}? /start_quiz")
+    else:
+        bot.send_message(message.chat.id, f"Wrong! The correct answer was: {correct_answer}. Try again with /start_quiz")
+
+# Helper function to create inline buttons for subjects
+def create_subject_buttons(action='add'):
+    markup = InlineKeyboardMarkup()
+    for subject in flashcards_data.keys():
+        callback_data = f"{action}_{subject}"
+        markup.add(InlineKeyboardButton(subject, callback_data=callback_data))
+    return markup
+
+
+
+
+
+
+
+###########################
+# Load subscribers from file
+if os.path.exists(SUBSCRIBERS_FILE):
+    with open(SUBSCRIBERS_FILE, 'r') as f:
+        subscribers = set(json.load(f))
+
+def save_subscribers():
+     with open(SUBSCRIBERS_FILE, 'w') as f:
+        json.dump(list(subscribers), f)
+
+# /subscribe command
+@bot.message_handler(commands=['subscribe'])
+def subscribe(message):
+    chat_id = message.chat.id
+    if chat_id in subscribers:
+        bot.reply_to(message, "You are already subscribed.")
+    else:
+        subscribers.add(chat_id)
+        save_subscribers()
+        bot.reply_to(message, "You have been subscribed successfully.")
+
+# /unsubscribe command
+@bot.message_handler(commands=['unsubscribe'])
+def unsubscribe(message):
+    chat_id = message.chat.id
+    if chat_id in subscribers:
+        subscribers.remove(chat_id)
+        save_subscribers()
+        bot.reply_to(message, "You have been unsubscribed successfully.")
+    else:
+        bot.reply_to(message, "You are not subscribed.")
+
+# /nofs command handler
+@bot.message_handler(commands=['nofs'])
+def send_subscribers_names(message):
+    if message.chat.id == AWAB_CHAT_ID:
+        names_list = []
+        subscribers_names = list(subscribers)
+        for chat_id in subscribers_names:
+            try:
+               user_info = bot.get_chat(chat_id)
+            # You can choose either full_name or username
+               first_name = user_info.first_name or "unknown"
+               second_name = user_info.last_name or ""
+               user_name = user_info.username or "no username"
+               full_name = f"{first_name} {second_name} ({user_name})"
+               names_list.append(full_name)
+            except telebot.apihelper.ApiTelegramException:
+               names_list.append(f"ID: {chat_id} (Name not found)")
+
+        names_text = "\n".join(names_list)
+        bot.send_message(AWAB_CHAT_ID, f"Subscribers:\n\n{names_text}")
+
+    elif message.chat.id == AMAR_CHAT_ID:
+        names_list = []
+        subscribers_names = list(subscribers)
+        for chat_id in subscribers_names:
+            try:
+               user_info = bot.get_chat(chat_id)
+            # You can choose either full_name or username
+               first_name = user_info.first_name or "unknown"
+               second_name = user_info.last_name or ""
+               user_name = user_info.username or "no username"
+               full_name = f"{first_name} {second_name} ({user_name})"
+               names_list.append(full_name)
+            except telebot.apihelper.ApiTelegramException:
+               names_list.append(f"ID: {chat_id} (Name not found)")
+
+        names_text = "\n".join(names_list)
+        bot.send_message(AMAR_CHAT_ID, f"Subscribers:\n\n{names_text}")
+    else:
+        bot.reply_to(message,"unauthorized access to nofs")
+
+
+
+@bot.message_handler(commands=['search'])
+def search_command(message):
+    bot.send_message(message.chat.id, "Please type what you want to search.")
+    bot.register_next_step_handler(message, perform_search)
+
+def perform_search(message):
+    query = message.text.strip()
+    if not query:
+        bot.send_message(message.chat.id, "Please enter a valid query.")
+        return
+
+    try:
+        results = search_google(query)
+        articles = results.get("articles", [])
+        images = results.get("images", [])
+
+        # Send article results
+        if articles:
+            bot.send_message(message.chat.id, "Articles:")
+            for article in articles:
+                title = article.get('title', 'No title')
+                link = article.get('link', 'No link')
+                bot.send_message(message.chat.id, f"Title: {title}\nLink: {link}")
+        else:
+            bot.send_message(message.chat.id, "No articles found.")
+
+        # Send image results
+        if images:
+            bot.send_message(message.chat.id, "Images:")
+            for image in images:
+                title = image.get('title', 'No title')
+                link = image.get('link', 'No link')
+                image_url = image.get('image_url', None)
+                bot.send_message(message.chat.id, f"Title: {title}\nLink: {link}")
+                if image_url:
+                    bot.send_photo(message.chat.id, image_url)
+        else:
+            bot.send_message(message.chat.id, "No images found.")
+
+    except Exception as e:
+        bot.send_message(message.chat.id, f"An error occurred: {str(e)}")
+
+def search_google(query):
+    url = "https://www.googleapis.com/customsearch/v1"
+
+    # Parameters for articles/web results
+    params_articles = {
+        "key": GOOGLE_API_KEY,
+        "cx": CSE_ID,
+        "q": query,
+        "num": 5,  # Limit to 5 results
+        "safe": "active",  # Enable SafeSearch
+    }
+
+    # Parameters for images
+    params_images = {
+        "key": GOOGLE_API_KEY,
+        "cx": CSE_ID,
+        "q": query,
+        "num": 5,  # Limit to 5 results
+        "searchType": "image",  # To search for images
+        "safe": "active",  # Enable SafeSearch
+    }
+
+    results = {"articles": [], "images": []}
+
+    try:
+        # Fetch articles
+        response_articles = requests.get(url, params=params_articles)
+        response_articles.raise_for_status()
+        data_articles = response_articles.json()
+
+        if "items" in data_articles:
+            for item in data_articles["items"]:
+                result = {
+                    'title': item.get('title', 'No title'),
+                    'link': item.get('link', 'No link'),
+                    'image_url': None
+                }
+                results["articles"].append(result)
+
+        # Fetch images
+        response_images = requests.get(url, params=params_images)
+        response_images.raise_for_status()
+        data_images = response_images.json()
+
+        if "items" in data_images:
+            for item in data_images["items"]:
+                result = {
+                    'title': item.get('title', 'No title'),
+                    'link': item.get('link', 'No link'),
+                    'image_url': None
+                }
+                if 'pagemap' in item and 'cse_image' in item['pagemap']:
+                    result['image_url'] = item['pagemap']['cse_image'][0]['src']
+                results["images"].append(result)
+
+    except requests.exceptions.RequestException as e:
+        raise Exception(f"Request error: {e}")
+    except ValueError as e:
+        raise Exception(f"JSON parsing error: {e}")
+    except Exception as e:
+        raise Exception(f"Unexpected error: {e}")
+
+    return results
+
+
+@bot.message_handler(commands=['upload'])
+def request_upload_code(message):
+    if message.chat.id in ADMIN_CHAT_ID:
+        bot.reply_to(message, "Please enter the code for your department to upload files:")
+        bot.register_next_step_handler(message, process_upload_code)
+    else:
+        bot.reply_to(message, "Unauthorized access to upload.")
+
+def process_upload_code(message):
+    if message.text.lower() == "/cancel":
+        cancel(message)
+        return
+
+    code = message.text.strip()
+
+    if code == "3030":
+        department = "electronics"
+    elif code == "4040":
+        department = "mechatronics"
+    else:
+        bot.reply_to(message, "Invalid code. Please enter a valid code.")
+        return
+
+    bot.reply_to(message, f"Department: {department}. Please enter the subject name:")
+    bot.register_next_step_handler(message, process_subject_name, department)
+
+def process_subject_name(message, department):
+    if message.text.lower() == "/cancel":
+        cancel(message)
+        return
+
+    subject_name = message.text.strip()
+
+    bot.reply_to(message, f"Subject: {subject_name}. Please upload PDF or PPTX files (you can upload multiple files):")
+    bot.register_next_step_handler(message, process_file_upload, department, subject_name)
+
+def process_file_upload(message, department, subject_name):
+    if message.document and message.document.mime_type in ['application/pdf', 'application/vnd.openxmlformats-officedocument.presentationml.presentation']:
+        file_info = bot.get_file(message.document.file_id)
+        downloaded_file = bot.download_file(file_info.file_path)
+
+        # Get the file extension
+        file_extension = message.document.file_name.split('.')[-1].lower()
+        subject_dir = os.path.join(subject_file)
+        os.makedirs(subject_dir, exist_ok=True)
+
+        file_path = os.path.join(subject_dir, message.document.file_name)
+
+        # Save the file (PDF or PPTX)
+        with open(file_path, 'wb') as file:
+            file.write(downloaded_file)
+
+        # Update the JSON file with the new file
+        if department not in subject_pdfs:
+            subject_pdfs[department] = {}
+        if subject_name not in subject_pdfs[department]:
+            subject_pdfs[department][subject_name] = []
+        subject_pdfs[department][subject_name].append(file_path)
+
+        with open(subjects_json, 'w') as f:
+            json.dump(subject_pdfs, f, indent=4)
+
+        bot.reply_to(message, f"File uploaded successfully to {subject_name} under {department}.")
+
+        # Ask if the user wants to upload another file
+        bot.reply_to(message, "Do you want to upload another file? (yes/no)")
+        bot.register_next_step_handler(message, ask_for_more_files, department, subject_name)
+    else:
+        bot.reply_to(message, "Invalid file format. Please upload a PDF or PPTX file.")
+
+def ask_for_more_files(message, department, subject_name):
+    if message.text.lower() in ['yes', 'y']:
+        bot.reply_to(message, f"Please upload another PDF or PPTX file for {subject_name} under {department}:")
+        bot.register_next_step_handler(message, process_file_upload, department, subject_name)
+    else:
+        bot.reply_to(message, f"Upload process completed for {subject_name} under {department}.")
+
+
+
+@bot.message_handler(commands=['transcript'])
+def ask_for_media(message):
+    bot.reply_to(message, "Send an audio file, video file, or YouTube link for transcription. Type /cancel to stop.")
+    bot.register_next_step_handler(message, handle_media)
+
+def handle_media(message):
+    if message.text and message.text.lower() == "/cancel":
+        bot.reply_to(message, "Transcription canceled.")
+        return
+
+    thread = threading.Thread(target=process_media, args=(message,))
+    thread.start()
+
+def process_media(message):
+    try:
+        file_path = download_and_convert_media(message)
+        if file_path:
+            transcript = transcribe_audio(file_path)
+            bot.reply_to(message, f"Transcript:\n{transcript}")
+    except Exception as e:
+        bot.reply_to(message, f"An error occurred: {e}")
+    finally:
+        cleanup_files()
+
+def download_and_convert_media(message):
+    file_info, file_path = None, None
+    youtube_url_pattern = re.compile(
+        r'(https?://)?(www\.)?(youtube|youtu|youtube-nocookie)\.(com|be)/(watch\?v=|embed/|v/|.+\?v=)?([^&=%\?]{11})'
+    )
+    if message.video:
+        file_info = bot.get_file(message.video.file_id)
+        file_path = message.video.file_name
+    elif message.document and message.document.mime_type.startswith(('video/', 'audio/')):
+        file_info = bot.get_file(message.document.file_id)
+        file_path = message.document.file_name
+    elif message.audio:
+        file_info = bot.get_file(message.audio.file_id)
+        file_path = message.audio.file_name or "received_audio.mp3"
+    elif message.text and youtube_url_pattern.match(message.text):
+        youtube_url = message.text
+        yt = YouTube(youtube_url)
+        stream = yt.streams.filter(only_audio=False, file_extension='mp4').first()
+        file_path = 'downloaded_video.mp4'
+        stream.download(filename=file_path)
+
+    if file_info:
+        downloaded_file = bot.download_file(file_info.file_path)
+        with open(file_path, 'wb') as media_file:
+            media_file.write(downloaded_file)
+
+    if file_path.endswith(('.mp4', '.mkv', '.avi')):
+        video = VideoFileClip(file_path)
+        audio_file_path = file_path.replace('.mp4', '.wav')
+        video.audio.write_audiofile(audio_file_path)
+        return audio_file_path
+
+    return file_path
+
+def transcribe_audio(audio_file_path):
+    recognizer = sr.Recognizer()
+    with sr.AudioFile(audio_file_path) as source:
+        audio_data = recognizer.record(source)
+        return recognizer.recognize_google(audio_data)
+
+def cleanup_files():
+    for file in os.listdir():
+        if file.endswith(('.mp4', '.mkv', '.avi', '.wav')):
+            os.remove(file)
+
+
+@bot.message_handler(commands=['report'])
+def report_issue(message):
+    bot.reply_to(message, "Please describe the issue you're facing:")
+    bot.register_next_step_handler(message, handle_report)
+
+def handle_report(message):
+    if message.text.lower() == "/cancel":
+        cancel(message)
+        return
+    # Construct the clickable link using Telegram markdown
+    report_text = f"Report from user <a href='tg://user?id={message.from_user.id}'>{message.from_user.first_name} {message.from_user.last_name}</a> : \n\n{message.text}"
+    bot.send_message(AWAB_CHAT_ID, report_text, parse_mode='HTML')
+    bot.reply_to(message, "Thank you for your report! We'll look into it.")
+
+@bot.message_handler(commands=['count'])
+def count(message):
+    if message.chat.id in ADMIN_CHAT_ID:
+        if os.path.exists(SUBSCRIBERS_FILE):
+            with open(SUBSCRIBERS_FILE,'r') as count:
+                subscribers_data = json.load(count)
+                subscribers_count = len(subscribers_data)
+                bot.send_message(AWAB_CHAT_ID,f" Subscribers are now: {subscribers_count}")
+    else:
+        bot.reply_to(message,"unauthorized access to count")
+
+@bot.message_handler(commands=['p2j'])
+def ask_for_py_file(message):
+    msg = bot.reply_to(message, "Please send the Python (.py) file you want to convert to a Jupyter notebook (.ipynb).")
+    bot.register_next_step_handler(msg, convert_py_to_ipynb)
+
+def convert_py_to_ipynb(message):
+    if message.document:
+        file_info = bot.get_file(message.document.file_id)
+        downloaded_file = bot.download_file(file_info.file_path)
+        py_file_path = message.document.file_name
+
+        # Check the file extension if MIME type is not recognized
+        if message.document.mime_type == 'text/x-python' or py_file_path.endswith('.py'):
+            with open(py_file_path, 'wb') as py_file:
+                py_file.write(downloaded_file)
+
+            # Read the Python file
+            with open(py_file_path, 'r') as f:
+                py_code = f.read()
+
+            # Create a Jupyter notebook
+            nb = nbf.new_notebook()
+            code_cell = nbf.new_code_cell(py_code)
+            nb.cells.append(code_cell)
+
+            # Save as .ipynb file
+            ipynb_file_path = py_file_path.replace('.py', '.ipynb')
+            with open(ipynb_file_path, 'w') as f:
+                nbformat.write(nb, f)
+
+            # Send the converted .ipynb file to the user
+            with open(ipynb_file_path, 'rb') as f:
+                bot.send_document(message.chat.id, f)
+
+            # Clean up temporary files
+            os.remove(py_file_path)
+            os.remove(ipynb_file_path)
+        else:
+            bot.reply_to(message, "The file you sent is not a valid Python (.py) file. Please try again.")
+    else:
+        bot.reply_to(message, "No file detected. Please try again.")
+
+# Command to handle text-to-speech
+@bot.message_handler(commands=['speech'])
+def text_to_speech(message):
+    bot.reply_to(message, "Please send the text you want to convert to speech. Supported languages: Arabic and English.")
+
+    # Register the next step to handle the text input
+    bot.register_next_step_handler(message, handle_text)
+
+def handle_text(message):
+    if message.text.lower() == "/cancel":
+        cancel(message)
+        return
+    try:
+        # Determine the language: Arabic if it contains Arabic characters, otherwise English
+        lang = 'ar' if is_arabic_text(message.text) else 'en'
+
+        # Generate speech using gTTS
+        tts = gTTS(text=message.text, lang=lang)
+        audio_file = f"{message.chat.id}_speech.mp3"
+        tts.save(audio_file)
+
+        # Send the audio file to the user
+        with open(audio_file, 'rb') as audio:
+            bot.send_voice(message.chat.id, audio)
+
+        # Clean up the audio file
+        os.remove(audio_file)
+
+    except Exception as e:
+        bot.reply_to(message, f"Failed to convert text to speech: {e}")
+
+def is_arabic_text(text):
+    # Check if the text contains Arabic characters
+    for char in text:
+        if '\u0600' <= char <= '\u06FF' or '\u0750' <= char <= '\u077F' or '\u08A0' <= char <= '\u08FF' or '\uFB50' <= char <= '\uFDFF' or '\uFE70' <= char <= '\uFEFF':
+            return True
+    return False
+
+# Store temporary data for users
+user_data = {}
+
+# Command to convert image to PDF
+@bot.message_handler(commands=['img_pdf'])
+def img_to_pdf(message):
+    bot.reply_to(message, "Please send the image you want to convert to PDF.")
+    @bot.message_handler(content_types=['photo'])
+    def handle_image(message):
+        try:
+            # Download the image
+            file_info = bot.get_file(message.photo[-1].file_id)
+            downloaded_file = bot.download_file(file_info.file_path)
+
+            # Save the image temporarily
+            img_name = f"{message.chat.id}_image.jpg"
+            with open(img_name, 'wb') as new_file:
+                new_file.write(downloaded_file)
+
+            # Store the image name in user data
+            user_data[message.chat.id] = img_name
+
+            # Ask the user for a name for the PDF
+            bot.reply_to(message, "What would you like to name the PDF? (Please send the name without the .pdf extension)")
+
+            # Move on to the next step: waiting for the PDF name
+            bot.register_next_step_handler(message, handle_pdf_name)
+        except Exception as e:
+            bot.reply_to(message, f"Failed to process image: {e}")
+
+def handle_pdf_name(message):
+    try:
+        pdf_name = f"{message.text}.pdf"
+        img_name = user_data.pop(message.chat.id, None)
+
+        if img_name:
+            # Convert image to PDF
+            image = Image.open(img_name)
+            image.save(pdf_name, "PDF", resolution=100.0)
+
+            # Send the PDF to the user
+            with open(pdf_name, 'rb') as pdf_file:
+                bot.send_document(message.chat.id, pdf_file)
+
+            # Clean up
+            os.remove(img_name)
+            os.remove(pdf_name)
+        else:
+            bot.reply_to(message, "No image was found to convert.")
+
+    except Exception as e:
+        bot.reply_to(message, f"Failed to rename and convert image to PDF: {e}")
+
+# Command to convert PDF to images
+@bot.message_handler(commands=['pdf_img'])
+def pdf_to_img(message):
+    try:
+        # Ask the user to send a PDF after the command
+        bot.reply_to(message, "Please send the PDF you want to convert to images.")
+
+        @bot.message_handler(content_types=['document'])
+        def handle_pdf(message):
+            try:
+                # Download the PDF
+                file_info = bot.get_file(message.document.file_id)
+                downloaded_file = bot.download_file(file_info.file_path)
+
+                # Save the PDF temporarily
+                pdf_name = f"{message.chat.id}_document.pdf"
+                with open(pdf_name, 'wb') as new_file:
+                    new_file.write(downloaded_file)
+
+                # Convert PDF to images
+                images = pdf2image.convert_from_path(pdf_name)
+                for i, image in enumerate(images):
+                    image_name = f"page_{i + 1}.jpg"
+                    image.save(image_name, "JPEG")
+
+                    # Send each image to the user
+                    with open(image_name, 'rb') as img_file:
+                        bot.send_photo(message.chat.id, img_file)
+
+                    # Clean up
+                    os.remove(image_name)
+
+                os.remove(pdf_name)
+            except Exception as e:
+                bot.reply_to(message, f"Failed to convert PDF to images: {e}")
+
+    except Exception as e:
+        bot.reply_to(message, f"Failed to start the PDF to image conversion process: {e}")
+
+def notify_admin(message):
+    try:
+        bot.send_message(AWAB_CHAT_ID, message)
+    except Exception as e:
+        print(f"Failed to notify admin: {e}")
+
+def health_check():
+    while True:
+        time.sleep(
+            3600)  # Send a heartbeat every hour (you can adjust the time)
+        try:
+            bot.send_message(AWAB_CHAT_ID, "Bot is running")
+        except Exception as e:
+            print(f"Failed to send heartbeat: {e}")
+
+def notify_shutdown():
+    notify_admin("Bot has stopped or is shutting down. Please restart it.")
+
+atexit.register(notify_shutdown)
+
+# Start the health check in a separate thread
+health_check_thread = threading.Thread(target=health_check)
+health_check_thread.daemon = True  # This ensures the thread will stop when the main program exits
+health_check_thread.start()
+
+# Your existing bot code here
+
+HELP = ("This is a study bot which can do this commands :\n"
+"/start - Restart the bot\n"
+        "/cancel - Cancel the function\n"
+       "/help_advanced - more tools!\n"
+        "/study - Display YouTube links for subjects\n"
+        "/lecture - Download selected subject PDFs\n"
+        "/img_pdf - Convert images to PDFs\n"
+        "/pdf_img - Convert PDFs to images\n"
+        "/python - Run and execute Python scripts\n"
+        "/p2j - Convert Python scripts to Jupyter notebooks\n"
+        "/j2p - Convert Jupyter scripts to python\n"
+        "/create_subject - allow you to create specific subject path for flashcards\n"
+        "/delete_subject - allow you to delete specific subject path\n"
+        "/add_flashcard - Add study flashcards and get quizzed\n"
+        "/view_flashcards - Allow you to view saved flashcards\n"
+        "/delete_flashcard - Delete a specific flashcard\n"
+        "/start_quiz - Quiz you randomly from flashcards") 
+        
+HELP_ADVANCED = ("This is advanced help:\n"
+"/start - Restart the bot\n"
+        "/cancel - Cancel the function\n"
+       "/help - Help me!\n"
+      "/subscribe - subscribe to broadcasts\n"
+      "/unsubscribe - unsubscribe to broadcasts\n"
+        "/bisection - Solve equations using the  bisection method\n"
+        "/study - Display YouTube links for subjects\n"
+        "/lecture - Download selected subject PDFs\n"
+        "/search - Search the web using Google engine\n"
+        "/searchimage - Search and download images\n"
+        "/img_pdf - Convert images to PDFs\n"
+        "/pdf_img - Convert PDFs to images\n"
+        "/speech - Convert text to Arabic or English voice\n"
+        "/transcript - Extract text from videos 'video must be sent as a file' \n"
+        "/python - Run and execute Python scripts\n"
+        "/p2j - Convert Python scripts to Jupyter notebooks\n"
+        "/j2p - Convert Jupyter scripts to python\n"
+        "/start_pomodoro - Start a study timer '25 min study, 5 min break' using Pomodoro method\n"
+        "/stop_pomodoro - Stop the Pomodoro timer\n"
+        "/create_subject - allow you to create specific subject path for flashcards\n"
+        "/delete_subject - allow you to delete specific subject path\n"
+        "/add_flashcard - Add study flashcards and get quizzed\n"
+        "/view_flashcards - Allow you to view saved flashcards\n"
+        "/delete_flashcard - Delete a specific flashcard\n"
+        "/start_quiz - Quiz you randomly from flashcards\n"
+        "/up_time - Admin: Manage something\n"
+        "/report - Report issues")
+
+# ... (rest of the code remains the same)
+@bot.message_handler(commands=['searchimage'])
+def search_image_command(message):
+    bot.reply_to(message, "Please enter the image search query:")
+    bot.register_next_step_handler(message, get_image_count)
+
+def get_image_count(message):
+    if message.text.lower() == "/cancel":
+        cancel(message)
+        return
+    query = message.text
+    bot.reply_to(message,
+                 "How many images do you want to download? (Enter a number)")
+    bot.register_next_step_handler(message,
+                                   lambda msg: search_image(msg, query))
+
+def search_image(message, query):
+    try:
+        image_count = int(message.text)
+        url = f"https://api.unsplash.com/search/photos?query={query}&client_id={UNSPLASH_ACCESS_KEY}"
+        response = requests.get(url)
+        if response.status_code == 200:
+            data = response.json()
+            if data['total'] == 0:
+                bot.reply_to(message, "No images found for your search query.")
+            else:
+                photo_urls = [
+                    result['urls']['regular'] for result in data['results']
+                ]
+                for i, url in enumerate(
+                        photo_urls[:image_count]
+                ):  # Download requested number of images
+                    response = requests.get(url)
+                    if response.status_code == 200:
+                        image = Image.open(BytesIO(response.content))
+                        image_file = BytesIO()
+                        image.save(image_file, 'JPEG')
+                        image_file.seek(0)
+                        bot.send_photo(message.chat.id, image_file)
+                    else:
+                        bot.reply_to(message,
+                                     f"Error downloading image {i+1}.")
+        else:
+            bot.reply_to(message,
+                         "Error searching images. Please try again later.")
+    except ValueError:
+        bot.reply_to(message, "Invalid input. Please enter a number.")
+
+# ... (rest of the code remains the same)
+
+# In-memory tracking
+online_users = set()
+
+
+if os.path.exists(subjects_url):
+    with open(subjects_url,'r') as sub:
+        subjects = json.load(sub)
+
+@bot.message_handler(content_types=['new_chat_members'])
+def greet_new_member(message):
+    for new_member in message.new_chat_members:
+        first_name = new_member.first_name or ""
+        last_name = new_member.last_name or ""
+        username = f"{first_name} {last_name}".strip()
+        bot.send_message(
+            message.chat.id,
+            f"Welcome to the group, {username}! Type /help to get started.")
+
+def bisection_method(func, a, b, tol=0.001):
+    steps = []
+    if func(a) * func(b) >= 0:
+        return "The bisection method cannot be applied due to non existing root", steps
+
+    c = a
+    while (b - a) / 2.0 > tol:
+        c = (a + b) / 2.0
+        steps.append(
+            f"a: {a}, b: {b}, c: {c}, f(c): {func(c)}, error: {(b - a) / 2.0}")
+        if func(c) == 0:
+            return c, steps
+        elif func(c) * func(a) < 0:
+            b = c
+        else:
+            a = c
+
+    return c, steps
+
+
+@bot.message_handler(commands=['start'])
+def send_welcome(message):
+    first_name = message.from_user.first_name or ""
+    last_name = message.from_user.last_name or ""
+    username = f"{first_name} {last_name}".strip()
+
+    bot.reply_to(
+        message,
+        f"Welcome {username} to MR AWAB study bot!\nUse /help command to see what the bot can do"
+    )
+
+@bot.message_handler(commands=['help'])
+def send_help(message):
+    bot.reply_to(message, HELP)
+    
+@bot.message_handler(commands=['help_advanced'])
+def send_help(message):
+    bot.reply_to(message, HELP_ADVANCED)    
+
+@bot.message_handler(commands=['cancel'])
+def cancel(message):
+        bot.clear_step_handler_by_chat_id(message.chat.id)  # Cancel the ongoing operation
+        bot.send_message(message.chat.id, "Operation Cancelled")
+
+
+@bot.message_handler(commands=['clear'])
+def clear_history(message):
+    bot.reply_to(
+        message,
+        "Are you sure you want to clear the history? Type 'yes' to confirm.")
+    bot.register_next_step_handler(message, confirm_clear)
+
+def confirm_clear(message):
+    if message.text.lower() == 'yes':
+        # Clear history logic (if needed)
+        bot.reply_to(message, "Chat history cleared.")
+    else:
+        bot.reply_to(message, "Clear history operation cancelled.")
+
+@bot.message_handler(commands=['bisection'])
+def bisection_command(message):
+    bot.reply_to(message,
+                 "Please send your equation, a, b, and tolerance (optional).")
+    bot.register_next_step_handler(message, solve_bisection)
+
+@bot.message_handler(commands=['python'])
+def python_command(message):
+    bot.reply_to(message, "Please send your Python script to run.")
+    bot.register_next_step_handler(message, run_python_script)
+
+def solve_bisection(message):
+    if message.text.lower() == "/cancel":
+        cancel(message)
+        return
+    try:
+        data = message.text.split(',')
+        func_str = data[0].strip()
+        a = float(data[1].strip())
+        b = float(data[2].strip())
+        tol = float(data[3].strip()) if len(data) > 3 else 0.001
+
+        x = sp.symbols('x')
+        func = sp.lambdify(x, sp.sympify(func_str))
+
+        result, steps = bisection_method(func, a, b, tol)
+
+        steps_str = "\n".join(steps)
+
+        bot.reply_to(message, f"Root = {result}\nSteps:\n{steps_str}")
+        bot.reply_to(message, "Success")
+    except Exception as e:
+        bot.reply_to(message, f"Error: {e}")
+
+# Define a set of allowed AST nodes corresponding to SAFE_GLOBALS
+ALLOWED_NODES = {
+    ast.Module,
+    ast.Expr,
+    ast.Load,
+    ast.Str,
+    ast.Num,
+    ast.BinOp,
+    ast.UnaryOp,
+    ast.If,
+    ast.Compare,
+    ast.FunctionDef,
+    ast.Call,
+    ast.Assign,
+    ast.AugAssign,
+    ast.Name,
+    ast.Attribute,
+    ast.Subscript,
+    ast.Slice,
+    ast.arguments,
+    ast.arg,
+    ast.Return,
+    ast.Pass,
+    ast.Import,
+    ast.ImportFrom,
+    ast.alias,
+    ast.Tuple,
+    ast.List,
+    ast.Dict,
+    ast.Set,
+    ast.comprehension,
+    ast.ListComp,
+    ast.DictComp,
+    ast.SetComp,
+    ast.GeneratorExp,
+    ast.BoolOp,
+    ast.And,
+    ast.Or,
+    ast.Not,
+    ast.Break,
+    ast.Continue,
+    ast.For,
+    ast.While,
+    ast.IfExp,
+    ast.Lambda,
+    ast.Try,
+    ast.ExceptHandler,
+    ast.Raise,
+    ast.FormattedValue,
+    ast.JoinedStr,
+    ast.Constant,
+    ast.Store  # Additional nodes for Python 3.6+
+}
+
+# Store user-defined variables between script executions
+user_variables = {}
+
+def run_python_script(message):
+    if message.text.lower() == "/cancel":
+        cancel(message)
+        return
+    def execute_script(script, output, safe_globals, safe_locals):
+        try:
+            with contextlib.redirect_stdout(output):
+                exec(script, safe_globals, safe_locals)
+        except Exception as e:
+            output.write(f"Error: {e}")
+
+    try:
+        script = message.text
+        tree = ast.parse(script, mode='exec')
+        code = compile(tree, filename="<ast>", mode="exec")
+
+        safe_globals = {
+            '__builtins__': {
+                'print': print,
+                'range': range,
+                'len': len,
+                'str': str,
+                'int': int,
+                'float': float,
+                'bool': bool,
+                'list': list,
+                'dict': dict,
+                'set': set,
+                'tuple': tuple,
+                'type': type,
+                'Exception': Exception,
+            }
+        }
+        safe_locals = user_variables
+
+        output = io.StringIO()
+        thread = threading.Thread(target=execute_script,
+                                  args=(code, output, safe_globals,
+                                        safe_locals))
+        thread.start()
+        thread.join(timeout=5)  # 5-second timeout
+
+        # Check for unauthorized access
+        for node in ast.walk(tree):
+            if type(node) not in ALLOWED_NODES:
+                bot.reply_to(
+                    message,
+                    f"Error: Unauthorized access to {node.__class__.__name__}")
+                return
+
+        if isinstance(node, ast.Name
+                      ) and node.id not in safe_globals and node.id not in dir(
+                          __builtins__) and node.id not in user_variables:
+            bot.reply_to(message, f"Error: Unauthorized access to {node.id}")
+            return
+
+        if thread.is_alive():
+            bot.reply_to(message, "Error: Script execution timed out.")
+        else:
+            result = output.getvalue()
+            bot.reply_to(message, f"Output:\n{result}")
+
+    except Exception as e:
+        bot.reply_to(message, f"Error: {e}")
+
+@bot.message_handler(commands=['study'])
+def send_study_materials(message):
+    markup = InlineKeyboardMarkup()
+    for subject, url in subjects.items():
+        markup.add(InlineKeyboardButton(subject, url=url))
+    bot.send_message(message.chat.id,
+                     "Choose a subject to study:",
+                     reply_markup=markup)
+
+@bot.message_handler(commands=['broadcast'])
+def broadcast_message(message):
+    if message.chat.id in ADMIN_CHAT_ID:
+        bot.reply_to(message, "Please send the message or file to broadcast.")
+        bot.register_next_step_handler(message, send_broadcast)
+    else:
+        bot.reply_to(message, "You are not authorized to send broadcast messages.")
+
+def send_broadcast(message):
+    if message.text.lower() == "/cancel":
+        cancel(message)
+        return
+
+    if message.text:  # If it's a text message
+        broadcast_content = message.text
+        for chat_id in subscribers:
+            try:
+                bot.send_message(chat_id, broadcast_content)
+            except Exception as e:
+                print(f"Failed to send message to {chat_id}: {e}")
+    elif message.document:  # If it's a document (PDF, PPTX, etc.)
+        file_id = message.document.file_id
+        file_name = message.document.file_name
+        for chat_id in subscribers:
+            try:
+                bot.send_document(chat_id, file_id, caption=f"Broadcasting {file_name}")
+            except Exception as e:
+                print(f"Failed to send document to {chat_id}: {e}")
+    elif message.audio:  # If it's an audio file
+        file_id = message.audio.file_id
+        for chat_id in subscribers:
+            try:
+                bot.send_audio(chat_id, file_id, caption="Broadcasting an audio file.")
+            except Exception as e:
+                print(f"Failed to send audio to {chat_id}: {e}")
+    elif message.video:  # If it's a video
+        file_id = message.video.file_id
+        for chat_id in subscribers:
+            try:
+                bot.send_video(chat_id, file_id, caption="Broadcasting a video.")
+            except Exception as e:
+                print(f"Failed to send video to {chat_id}: {e}")
+
+    bot.reply_to(message, "Broadcast message sent.")
+
+
+# Load responses from response.json
+def load_responses():
+    with open('response.json', 'r') as file:
+        return json.load(file)
+
+responses = load_responses()
+
+@bot.message_handler(func=lambda message: True)
+def handle_text_messages(message):
+    first_name = message.from_user.first_name or ""
+    last_name = message.from_user.last_name or ""
+    username = f"{first_name} {last_name}".strip()
+
+    # Access the lists from the loaded JSON file
+    greetings = responses["greetings"]
+    acknowledgments = responses["acknowledgments"]
+    help_keywords = responses["help_keywords"]
+    compliments = responses["compliments"]
+    farewells = responses["farewells"]
+    jokes = responses["jokes"]
+
+    # Check if the message contains any greeting
+    if any(greeting in message.text.lower() for greeting in greetings):
+        response = (
+            f"Hi {username}! How can I assist you today?"
+        )
+        bot.reply_to(message, response)
+
+    # Acknowledge thanks or any similar responses
+    elif any(ack in message.text.lower() for ack in acknowledgments):
+        response = (
+            f"You're welcome, {username}! 😊 If you need anything else, just ask! I'm here to help."
+        )
+        bot.reply_to(message, response)
+
+    # Respond to help requests
+    elif any(help in message.text.lower() for help in help_keywords):
+        response = (
+            "I'm here to help you! Here are some things you can do:\n"
+            "/help - Get assistance\n"
+            "/help_advanced - Get more assistance\n"
+            "/subscribe - Subscribe for updates\n"
+            "/unsubscribe - Unsubscribe from updates\n"
+            "Feel free to ask me anything else, and I'll do my best to assist you!"
+        )
+        bot.reply_to(message, response)
+
+    # Respond to compliments
+    elif any(comp in message.text.lower() for comp in compliments):
+        response = (
+            f"Aww, thanks, {username}! 😄 You're amazing too! If you need anything, just let me know!"
+        )
+        bot.reply_to(message, response)
+
+    # Respond to farewells
+    elif any(farewell in message.text.lower() for farewell in farewells):
+        response = (
+            f"Goodbye {username}! Take care and feel free to reach out anytime. 👋"
+        )
+        bot.reply_to(message, response)
+
+    # Respond to jokes requests (random joke from the list)
+    elif any(joke in message.text.lower() for joke in jokes):
+        response = random.choice(jokes)
+        bot.reply_to(message, response)
+
+    # Handle replies to bot's previous message
+    elif message.reply_to_message:
+        if message.reply_to_message.from_user.id == bot.get_me().id:
+            response = (
+                "Hmm, I didn't quite get that 😅. Maybe try using /help to see what I can do!"
+            )
+            bot.reply_to(message, response)
+
+    # If the message doesn't match any known patterns, offer a default response
+    else:
+        bot.reply_to(
+            message,
+            "Sorry, I didn't understand that 😕. Use /help to see available commands or ask for assistance!"
+        )
+
+
+def notify_users_online():
+    for chat_id in online_users:
+        try:
+            bot.send_message(chat_id, "I am back online!")
+        except:
+            pass
+
+# Notify users when the bot starts up
+notify_users_online()
+# Start polling with exception handling
+while True:
+    try:
+        bot.polling(none_stop=True, timeout=120, long_polling_timeout=120)
+    except Exception as e:
+        print(f"Polling error: {e}")
+        # Optionally, you can add a delay before retrying
+        time.sleep(10)
