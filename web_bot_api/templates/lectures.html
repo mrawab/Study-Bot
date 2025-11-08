@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Bot - Lectures</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Custom CSS Variables */
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --accent-color: #4895ef;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+            --success-color: #4cc9f0;
+            --warning-color: #f72585;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --hover-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        /* Global Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            color: var(--dark-color);
+            line-height: 1.6;
+        }
+
+        /* Navigation */
+        .navbar {
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color)) !important;
+            padding: 0.8rem 0;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            transition: var(--transition);
+        }
+
+        .navbar-brand:hover {
+            transform: translateY(-2px);
+        }
+
+        .navbar-nav .nav-link {
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            transition: var(--transition);
+            margin: 0 0.2rem;
+        }
+
+        .navbar-nav .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .navbar-nav .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.2);
+            font-weight: 600;
+        }
+
+        /* Card Styles */
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            transition: var(--transition);
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--hover-shadow);
+        }
+
+        .card-header {
+            background: linear-gradient(to right, var(--light-color), #e9ecef);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            font-weight: 600;
+            padding: 1rem 1.25rem;
+        }
+
+        /* Button Styles */
+        .btn {
+            border-radius: 8px;
+            font-weight: 500;
+            transition: var(--transition);
+            padding: 0.5rem 1rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(to right, var(--primary-color), var(--accent-color));
+            border: none;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.4);
+        }
+
+        .btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        /* Subject Cards */
+        .subject-card {
+            height: 100%;
+            transition: var(--transition);
+            cursor: pointer;
+            border-left: 4px solid transparent;
+        }
+
+        .subject-card:hover {
+            transform: translateY(-8px);
+            border-left-color: var(--primary-color);
+        }
+
+        /* Lecture Items */
+        .lecture-item {
+            border-left: 4px solid var(--primary-color);
+            transition: var(--transition);
+            margin-bottom: 1rem;
+        }
+
+        .lecture-item:hover {
+            background-color: rgba(67, 97, 238, 0.05);
+            border-left-width: 6px;
+        }
+
+        /* Form Styles */
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            padding: 0.75rem 1rem;
+            transition: var(--transition);
+        }
+
+        .form-control:focus, .form-select:focus {
+            box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
+            border-color: var(--primary-color);
+        }
+
+        /* Toast Styles */
+        .toast {
+            border-radius: 8px;
+            box-shadow: var(--hover-shadow);
+            min-width: 300px;
+        }
+
+        /* Loading Spinner */
+        .loading-spinner {
+            width: 3rem;
+            height: 3rem;
+        }
+
+        /* User Profile Section */
+        .user-profile {
+            background: linear-gradient(135deg, #e0f7fa 0%, #bbdefb 100%);
+            border-radius: 12px;
+        }
+
+        /* Authentication Section */
+        .auth-section {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 12px;
+        }
+
+        /* Icons */
+        .file-icon {
+            font-size: 1.5rem;
+        }
+
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+
+        /* Animations */
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(67, 97, 238, 0.4);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(67, 97, 238, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(67, 97, 238, 0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .floating {
+            animation: floating 3s ease-in-out infinite;
+        }
+
+        @keyframes floating {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .navbar-brand {
+                font-size: 1.2rem;
+            }
+
+            .navbar-nav {
+                margin-top: 1rem;
+            }
+
+            .navbar-nav .nav-link {
+                margin: 0.2rem 0;
+            }
+
+            .card {
+                margin-bottom: 1rem;
+            }
+
+            .btn-responsive {
+                width: 100%;
+                margin-bottom: 0.5rem;
+            }
+
+            .user-info-row div {
+                margin-bottom: 0.5rem;
+                text-align: center;
+            }
+
+            .modal-dialog {
+                margin: 0.5rem;
+            }
+
+            .toast {
+                min-width: 250px;
+                font-size: 0.875rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .container {
+                padding-left: 15px;
+                padding-right: 15px;
+            }
+
+            .card-body {
+                padding: 1rem;
+            }
+
+            .card-header {
+                padding: 0.75rem 1rem;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
+
+            .lead {
+                font-size: 1rem;
+            }
+        }
+
+        /* Utility Classes */
+        .text-truncate-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .shadow-custom {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .border-radius-custom {
+            border-radius: 12px;
+        }
+
+        /* Color Utilities */
+        .text-danger { color: #dc3545 !important; }
+        .text-primary { color: var(--primary-color) !important; }
+        .text-warning { color: #ffc107 !important; }
+        .text-success { color: #198754 !important; }
+        .text-info { color: #0dcaf0 !important; }
+        .text-secondary { color: #6c757d !important; }
+
+        /* Badge Styles */
+        .badge {
+            font-weight: 500;
+            padding: 0.35em 0.65em;
+        }
+
+        /* Alert Styles */
+        .alert {
+            border: none;
+            border-radius: 8px;
+        }
+
+        /* Page Header */
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        /* Grid Improvements */
+        .row {
+            margin-bottom: 1rem;
+        }
+
+        /* Modal Improvements */
+        .modal-content {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .modal-header {
+            border-bottom: 1px solid #e9ecef;
+            padding: 1.25rem;
+        }
+
+        .modal-body {
+            padding: 1.25rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">Study Bot Lectures</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <div class="navbar-nav ms-auto">
+                    <a class="nav-link" href="/">Home</a>
+                    <a class="nav-link active" href="/web/lectures">Lectures</a>
+                    <a class="nav-link" href="/web/flashcards">Flashcards</a>
+                    <a class="nav-link" href="/web/quiz">Quiz</a>
+                    <a class="nav-link" href="/web/analytics">Analytics</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row page-header">
+            <div class="col-12">
+                <h2>Lecture Materials</h2>
+                <p class="lead">Access and manage your course lectures and study materials</p>
+            </div>
+        </div>
+
+        <!-- User Authentication Section -->
+        <div class="row" id="authenticationSection">
+            <div class="col-12">
+                <div class="card auth-section">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0"><i class="fas fa-user me-2"></i>User Authentication</h5>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary me-2" onclick="showLoginForm()">
+                                <i class="fas fa-sign-in-alt me-1"></i>Login
+                            </button>
+                            <button class="btn btn-sm btn-outline-success" onclick="showRegistrationForm()">
+                                <i class="fas fa-user-plus me-1"></i>Register
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Login Form -->
+                    <div class="card-body" id="loginForm" style="display: none;">
+                        <form id="userLoginForm">
+                            <div class="row g-3">
+                                <div class="col-md-12">
+                                    <label class="form-label">Your Name</label>
+                                    <input type="text" class="form-control" id="loginUserName" required
+                                           placeholder="Enter your registered name" oninput="toLowerCaseInput(this)">
+                                    <div class="form-text">Enter the name you used during registration</div>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-sign-in-alt me-1"></i>Login
+                                </button>
+                                <button type="button" class="btn btn-secondary ms-2" onclick="hideAuthForms()">
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Registration Form -->
+                    <div class="card-body" id="registrationForm" style="display: none;">
+                        <form id="userRegistrationForm">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Your Name</label>
+                                    <input type="text" class="form-control" id="userName" required
+                                           placeholder="Enter your full name" oninput="toLowerCaseInput(this)">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Semester</label>
+                                    <select class="form-select" id="userSemester" required>
+                                        <option value="">Select Semester</option>
+                                        <option value="course 1">Course 1</option>
+                                        <option value="semester 4">Semester 4</option>
+                                        <option value="semester 5">Semester 5</option>
+                                        <option value="semester 6">Semester 6</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Department</label>
+                                    <select class="form-select" id="userDepartment" required>
+                                        <option value="">Select Department</option>
+                                        <option value="computer">Computer Engineering</option>
+                                        <option value="electronics">Electronics Engineering</option>
+                                        <option value="mechatronics">Mechatronics Engineering</option>
+                                        <option value="biomedical">Bio Medical Engineering</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-user-check me-1"></i>Register Profile
+                                </button>
+                                <button type="button" class="btn btn-secondary ms-2" onclick="hideAuthForms()">
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Default Info -->
+                    <div class="card-body text-center" id="authInfo">
+                        <i class="fas fa-user-circle feature-icon floating"></i>
+                        <div class="alert alert-info mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Welcome!</strong> Login if you already have a profile, or register to create a new one.
+                            This will save your semester and department preferences. <strong>You can browse lectures without logging in!</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current User Info -->
+        <div class="row" id="currentUserSection" style="display: none;">
+            <div class="col-12">
+                <div class="card user-profile">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0"><i class="fas fa-user me-2"></i>Current Profile</h5>
+                        <button class="btn btn-sm btn-outline-danger" onclick="logoutUser()">
+                            <i class="fas fa-sign-out-alt me-1"></i>Logout
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="row user-info-row">
+                            <div class="col-md-3">
+                                <strong>Name:</strong> <span id="currentUserName">-</span>
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Semester:</strong> <span id="currentUserSemester">-</span>
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Department:</strong> <span id="currentUserDepartment">-</span>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-sm btn-outline-warning btn-responsive" onclick="switchToGuest()">
+                                    <i class="fas fa-user-clock me-1"></i>Guest Mode
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Course Selection -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0"><i class="fas fa-book me-2"></i>Select Your Course</h5>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="clearSelections()">
+                            <i class="fas fa-times me-1"></i>Clear
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Semester</label>
+                                <select id="semesterSelect" class="form-select">
+                                    <option value="">Select Semester</option>
+                                    <option value="course 1">Course 1</option>
+                                    <option value="semester 4">Semester 4</option>
+                                    <option value="semester 5">Semester 5</option>
+                                    <option value="semester 6">Semester 6</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Department</label>
+                                <select id="departmentSelect" class="form-select">
+                                    <option value="">Select Department</option>
+                                    <option value="computer">Computer Engineering</option>
+                                    <option value="electronics">Electronics Engineering</option>
+                                    <option value="mechatronics">Mechatronics Engineering</option>
+                                    <option value="biomedical">Bio Medical Engineering</option>
+                                    <option value="linux">Linux</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Subjects Grid -->
+        <div class="row" id="subjectsSection" style="display: none;">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="card-title mb-0"><i class="fas fa-folder me-2"></i>Subjects</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row" id="subjectsGrid">
+                            <!-- Subjects will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div class="row" id="loadingSection" style="display: none;">
+            <div class="col-12 text-center py-5">
+                <div class="spinner-border text-primary loading-spinner" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-3 text-muted">Loading subjects...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lectures Modal -->
+    <div class="modal fade" id="lecturesModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalSubjectTitle">Lectures</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="lecturesList">
+                        <!-- Lectures will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Your original JavaScript code remains unchanged
+        let currentUser = null;
+        let currentSemester = '';
+        let currentDepartment = '';
+        let currentSubject = '';
+
+        // New utility functions
+        function toLowerCaseInput(input) {
+            input.value = input.value.toLowerCase();
+        }
+
+        function formatSemesterDisplay(semester) {
+            // Convert "semester 4" to "4", "semester 5" to "5", etc.
+            return semester.replace('semester ', '');
+        }
+
+        function capitalizeFirstWord(text) {
+            if (!text) return '';
+            return text.charAt(0).toUpperCase() + text.slice(1);
+        }
+
+        function formatDepartmentDisplay(department) {
+            // Capitalize first letter of each word in department
+            return department.split(' ')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+        }
+
+        // Cookie functions
+        function setCookie(name, value, days = 30) {
+            const expires = new Date();
+            expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+            document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
+        }
+
+        function getCookie(name) {
+            const nameEQ = name + "=";
+            const ca = document.cookie.split(';');
+            for(let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+                if (c.indexOf(nameEQ) === 0) return decodeURIComponent(c.substring(nameEQ.length, c.length));
+            }
+            return null;
+        }
+
+        function deleteCookie(name) {
+            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+        }
+
+        function saveSelections() {
+            const semester = document.getElementById('semesterSelect').value;
+            const department = document.getElementById('departmentSelect').value;
+
+            if (semester) setCookie('selected_semester', semester);
+            if (department) setCookie('selected_department', department);
+            if (currentUser) setCookie('current_user', currentUser);
+
+            console.log('Saved selections:', { semester, department, currentUser });
+        }
+
+        function loadSelections() {
+            const savedSemester = getCookie('selected_semester');
+            const savedDepartment = getCookie('selected_department');
+            const savedUser = getCookie('current_user');
+
+            console.log('Loading saved selections:', { savedSemester, savedDepartment, savedUser });
+
+            if (savedSemester) {
+                document.getElementById('semesterSelect').value = savedSemester;
+                currentSemester = savedSemester;
+            }
+            if (savedDepartment) {
+                document.getElementById('departmentSelect').value = savedDepartment;
+                currentDepartment = savedDepartment;
+            }
+
+            // Load user data if user is saved
+            if (savedUser) {
+                loadUserData(savedUser);
+            } else {
+                // If no user but we have semester/department, auto-load subjects
+                if (savedSemester && savedDepartment) {
+                    console.log('Auto-loading subjects for guest user');
+                    setTimeout(() => {
+                        loadSubjects();
+                    }, 500);
+                }
+            }
+        }
+
+        // Authentication functions
+        function showLoginForm() {
+            hideAuthForms();
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('authInfo').style.display = 'none';
+        }
+
+        function showRegistrationForm() {
+            hideAuthForms();
+            document.getElementById('registrationForm').style.display = 'block';
+            document.getElementById('authInfo').style.display = 'none';
+        }
+
+        function hideAuthForms() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('registrationForm').style.display = 'none';
+            document.getElementById('authInfo').style.display = 'block';
+        }
+
+        // Login function
+        async function loginUser(event) {
+            if (event) event.preventDefault();
+
+            const name = document.getElementById('loginUserName').value.trim().toLowerCase();
+
+            if (!name) {
+                alert('Please enter your name');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/user/settings?username=${encodeURIComponent(name)}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    // User exists, login successful
+                    currentUser = name;
+                    currentSemester = data.settings.semester;
+                    currentDepartment = data.settings.department;
+
+                    updateUserDisplay();
+                    hideAuthForms();
+                    loadSubjects();
+
+                    showToast(`Welcome back, ${capitalizeFirstWord(name)}!`, 'bg-success');
+                } else {
+                    alert('User not found. Please check your name or register a new profile.');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('Error during login. Please try again.');
+            }
+        }
+
+        // Load user data function
+        async function loadUserData(username) {
+            try {
+                const response = await fetch(`/api/user/settings?username=${encodeURIComponent(username)}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    currentUser = username;
+                    currentSemester = data.settings.semester;
+                    currentDepartment = data.settings.department;
+
+                    updateUserDisplay();
+                    loadSubjects();
+
+                    console.log('User data loaded successfully:', { currentUser, currentSemester, currentDepartment });
+                } else {
+                    // User not found, clear the invalid user cookie
+                    deleteCookie('current_user');
+                    console.log('User not found, cleared invalid cookie');
+                }
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                // On error, keep guest mode
+                deleteCookie('current_user');
+            }
+        }
+
+        // Registration function
+        async function registerUser(event) {
+            if (event) event.preventDefault();
+
+            const name = document.getElementById('userName').value.trim().toLowerCase();
+            const semester = document.getElementById('userSemester').value;
+            const department = document.getElementById('userDepartment').value;
+
+            if (!name || !semester || !department) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/user/register', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({name: name, semester: semester, department: department})
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    currentUser = data.user_name;
+                    currentSemester = semester;
+                    currentDepartment = department;
+
+                    updateUserDisplay();
+                    hideAuthForms();
+                    loadSubjects();
+
+                    showToast('Profile registered successfully!', 'bg-success');
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                alert('Error registering profile');
+            }
+        }
+
+        function updateUserDisplay() {
+            // Display name with first letter capitalized for better readability
+            document.getElementById('currentUserName').textContent = capitalizeFirstWord(currentUser);
+
+            // Display semester as just the number (e.g., "4" instead of "semester 4")
+            document.getElementById('currentUserSemester').textContent = formatSemesterDisplay(currentSemester);
+
+            // Display department with proper capitalization
+            document.getElementById('currentUserDepartment').textContent = formatDepartmentDisplay(currentDepartment);
+
+            document.getElementById('currentUserSection').style.display = 'block';
+            document.getElementById('authenticationSection').style.display = 'none';
+
+            document.getElementById('semesterSelect').value = currentSemester;
+            document.getElementById('departmentSelect').value = currentDepartment;
+
+            // Save to cookies
+            saveSelections();
+        }
+
+        function logoutUser() {
+            if (confirm('Are you sure you want to logout?')) {
+                currentUser = null;
+
+                document.getElementById('currentUserSection').style.display = 'none';
+                document.getElementById('authenticationSection').style.display = 'block';
+                // DON'T hide subjects section when logging out - keep lectures visible
+                // document.getElementById('subjectsSection').style.display = 'none';
+
+                // Clear user cookie but keep semester/department
+                deleteCookie('current_user');
+                hideAuthForms();
+
+                showToast('Logged out successfully - you can still browse lectures', 'bg-info');
+            }
+        }
+
+        function switchToGuest() {
+            if (confirm('Switch to guest mode? Your course selections will be kept.')) {
+                logoutUser();
+            }
+        }
+
+        function clearSelections() {
+            if (confirm('Are you sure you want to clear all course selections?')) {
+                deleteCookie('selected_semester');
+                deleteCookie('selected_department');
+                document.getElementById('semesterSelect').value = '';
+                document.getElementById('departmentSelect').value = '';
+                document.getElementById('subjectsSection').style.display = 'none';
+                currentSemester = '';
+                currentDepartment = '';
+                showToast('Course selections cleared', 'bg-info');
+            }
+        }
+
+        // Load subjects when semester/department selected - ALWAYS allow this regardless of login status
+        async function loadSubjects() {
+            const semester = document.getElementById('semesterSelect').value || currentSemester;
+            const department = document.getElementById('departmentSelect').value || currentDepartment;
+
+            console.log('Loading subjects:', { semester, department, currentUser });
+
+            if (!semester || !department) {
+                document.getElementById('subjectsSection').style.display = 'none';
+                return;
+            }
+
+            currentSemester = semester;
+            currentDepartment = department;
+
+            // Save selections to cookies (even for guest users)
+            saveSelections();
+
+            document.getElementById('loadingSection').style.display = 'block';
+            document.getElementById('subjectsSection').style.display = 'none';
+
+            try {
+                const response = await fetch(`/api/lectures/subjects?username=${currentUser || 'guest'}&semester=${encodeURIComponent(semester)}&department=${encodeURIComponent(department)}`);
+                const data = await response.json();
+
+                console.log('API Response:', data);
+
+                if (data.success) {
+                    if (data.subjects && data.subjects.length > 0) {
+                        displaySubjects(data.subjects);
+                        document.getElementById('subjectsSection').style.display = 'block';
+                    } else {
+                        document.getElementById('subjectsSection').style.display = 'block';
+                        document.getElementById('subjectsGrid').innerHTML = `
+                            <div class="col-12 text-center py-4">
+                                <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">No subjects found for ${formatSemesterDisplay(semester)} - ${formatDepartmentDisplay(department)}</p>
+                            </div>
+                        `;
+                    }
+                } else {
+                    alert('Error: ' + data.error);
+                    document.getElementById('subjectsSection').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error loading subjects:', error);
+                alert('Error loading subjects. Please try again.');
+                document.getElementById('subjectsSection').style.display = 'none';
+            } finally {
+                document.getElementById('loadingSection').style.display = 'none';
+            }
+        }
+
+        // Display subjects
+        function displaySubjects(subjects) {
+            const grid = document.getElementById('subjectsGrid');
+            grid.innerHTML = '';
+
+            subjects.forEach(subject => {
+                const col = document.createElement('div');
+                col.className = 'col-md-6 col-lg-4 mb-3';
+                col.innerHTML = `
+                    <div class="card h-100 shadow-sm subject-card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="card-title text-truncate">${subject.name}</h6>
+                                <span class="badge bg-primary">${subject.lecture_count} lectures</span>
+                            </div>
+                            <p class="card-text small text-muted">
+                                <i class="fas fa-hdd me-1"></i>${subject.total_size_mb.toFixed(1)} MB
+                            </p>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <button class="btn btn-sm btn-outline-primary w-100" onclick="openLecturesModal('${subject.name}')">
+                                <i class="fas fa-eye me-1"></i>View Lectures
+                            </button>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(col);
+            });
+        }
+
+        // Open lectures modal - ALLOW THIS FOR GUEST USERS TOO
+        async function openLecturesModal(subjectName) {
+            currentSubject = subjectName;
+            document.getElementById('modalSubjectTitle').textContent = `${subjectName} - Lectures`;
+
+            try {
+                const response = await fetch(`/api/lectures/lectures?username=${currentUser || 'guest'}&semester=${encodeURIComponent(currentSemester)}&department=${encodeURIComponent(currentDepartment)}&subject=${encodeURIComponent(subjectName)}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    displayLectures(data.lectures);
+                    const modal = new bootstrap.Modal(document.getElementById('lecturesModal'));
+                    modal.show();
+                }
+            } catch (error) {
+                console.error('Error loading lectures:', error);
+                document.getElementById('lecturesList').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Error loading lectures
+                    </div>
+                `;
+            }
+        }
+
+        // Display lectures
+        function displayLectures(lectures) {
+            const list = document.getElementById('lecturesList');
+            list.innerHTML = '';
+
+            if (lectures.length === 0) {
+                list.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No lectures available for this subject.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            lectures.forEach(lecture => {
+                const lectureItem = document.createElement('div');
+                lectureItem.className = 'card mb-3 lecture-item';
+                const fileIcon = getFileIconFromName(lecture.title);
+
+                lectureItem.innerHTML = `
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-auto">
+                                <i class="fas ${fileIcon} fa-2x text-primary"></i>
+                            </div>
+                            <div class="col">
+                                <h6 class="card-title mb-1">${lecture.title}</h6>
+                                <p class="card-text small text-muted mb-0">
+                                    ${getFileTypeFromName(lecture.title)} • ${lecture.file_size_mb.toFixed(1)} MB
+                                </p>
+                            </div>
+                            <div class="col-auto">
+                                ${lecture.has_file ? `
+                                    <button class="btn btn-primary btn-sm" onclick="downloadLectureBest(${lecture.id}, '${lecture.title.replace(/'/g, "\\'")}', '${lecture.type}')">
+                                        <i class="fas fa-download me-1"></i>Download
+                                    </button>
+                                ` : `
+                                    <button class="btn btn-secondary btn-sm" disabled>
+                                        <i class="fas fa-ban me-1"></i>Unavailable
+                                    </button>
+                                `}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(lectureItem);
+            });
+        }
+
+        // Download lecture - ONLY require login for downloads
+        async function downloadLectureBest(lectureId, fileName, fileType) {
+            if (!currentUser) {
+                alert('Please login or register first to download files. You can still browse lectures without an account.');
+                return;
+            }
+
+            const downloadUrl = `/api/lectures/download/${lectureId}?username=${currentUser}&semester=${encodeURIComponent(currentSemester)}&department=${encodeURIComponent(currentDepartment)}&subject=${encodeURIComponent(currentSubject)}`;
+
+            showDownloadMessage(`Preparing ${fileName}...`);
+
+            try {
+                const response = await fetch(downloadUrl);
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = fileName;
+                    link.style.display = 'none';
+                    document.body.appendChild(link);
+                    link.click();
+
+                    setTimeout(() => {
+                        document.body.removeChild(link);
+                        window.URL.revokeObjectURL(url);
+                        showDownloadSuccess(fileName);
+                    }, 100);
+
+                } else {
+                    throw new Error('Download failed');
+                }
+            } catch (error) {
+                console.error('Download error:', error);
+                showDownloadError(`Failed to download ${fileName}`);
+            }
+        }
+
+        // Helper functions
+        function getFileIconFromName(fileName) {
+            if (!fileName) return 'fa-file';
+            const ext = fileName.split('.').pop().toLowerCase();
+            const iconMap = {
+                'pdf': 'fa-file-pdf text-danger', 'doc': 'fa-file-word text-primary', 'docx': 'fa-file-word text-primary',
+                'ppt': 'fa-file-powerpoint text-warning', 'pptx': 'fa-file-powerpoint text-warning', 'pps': 'fa-file-powerpoint text-warning', 'ppsx': 'fa-file-powerpoint text-warning',
+                'xls': 'fa-file-excel text-success', 'xlsx': 'fa-file-excel text-success', 'txt': 'fa-file-alt text-secondary',
+                'zip': 'fa-file-archive text-warning', 'rar': 'fa-file-archive text-warning', 'jpg': 'fa-file-image text-info',
+                'jpeg': 'fa-file-image text-info', 'png': 'fa-file-image text-info', 'gif': 'fa-file-image text-info',
+                'mp4': 'fa-file-video text-primary', 'avi': 'fa-file-video text-primary', 'mov': 'fa-file-video text-primary'
+            };
+            return iconMap[ext] || 'fa-file text-primary';
+        }
+
+        function getFileTypeFromName(fileName) {
+            if (!fileName) return 'File';
+            const ext = fileName.split('.').pop().toLowerCase();
+            const typeMap = {
+                'pdf': 'PDF', 'doc': 'Word', 'docx': 'Word', 'ppt': 'PowerPoint', 'pptx': 'PowerPoint', 'pps': 'PowerPoint', 'ppsx': 'PowerPoint',
+                'xls': 'Excel', 'xlsx': 'Excel', 'txt': 'Text', 'zip': 'Archive', 'rar': 'Archive', 'jpg': 'Image', 'jpeg': 'Image',
+                'png': 'Image', 'gif': 'Image', 'mp4': 'Video', 'avi': 'Video', 'mov': 'Video'
+            };
+            return typeMap[ext] || 'File';
+        }
+
+        // Toast messages
+        function showDownloadMessage(message) { showToast(message, 'bg-info'); }
+        function showDownloadSuccess(fileName) { showToast(`✓ ${fileName} downloaded successfully`, 'bg-success'); }
+        function showDownloadError(message) { showToast(`✗ ${message}`, 'bg-danger'); }
+
+        function showToast(message, bgClass = 'bg-info') {
+            const toast = document.createElement('div');
+            toast.className = `toast align-items-center text-white ${bgClass} border-0 position-fixed top-0 end-0 m-3`;
+            toast.style.zIndex = '1060';
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">${message}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
+            bsToast.show();
+            toast.addEventListener('hidden.bs.toast', () => {
+                document.body.removeChild(toast);
+            });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSelections();
+            document.getElementById('semesterSelect').addEventListener('change', loadSubjects);
+            document.getElementById('departmentSelect').addEventListener('change', loadSubjects);
+            document.getElementById('userRegistrationForm').addEventListener('submit', registerUser);
+            document.getElementById('userLoginForm').addEventListener('submit', loginUser);
+        });
+
+
+    </script>
+</body>
+</html>
