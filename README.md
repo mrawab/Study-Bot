@@ -1,1 +1,1 @@
-The scrapping script that download lectures from the university website and into the bot 
+The Flutter For The Bot Mobile App
