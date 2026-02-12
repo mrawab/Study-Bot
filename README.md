@@ -1,0 +1,1 @@
+Alpha testing of the idea of an app for the bot later used flutter code will be uploaded soon under a branch
