@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Bot - Flashcards</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Custom CSS Variables */
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --accent-color: #4895ef;
+            --purple-color: #6f42c1;
+            --purple-dark: #5a2d91;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+            --success-color: #4cc9f0;
+            --warning-color: #f72585;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --hover-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        /* Global Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            color: var(--dark-color);
+            line-height: 1.6;
+        }
+
+        /* Navigation */
+        .navbar {
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color)) !important;
+            padding: 0.8rem 0;
+        }
+
+
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            transition: var(--transition);
+        }
+
+        .navbar-brand:hover {
+            transform: translateY(-2px);
+        }
+
+        .navbar-nav .nav-link {
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            transition: var(--transition);
+            margin: 0 0.2rem;
+        }
+
+        .navbar-nav .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .navbar-nav .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.2);
+            font-weight: 600;
+        }
+
+        /* Card Styles */
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            transition: var(--transition);
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--hover-shadow);
+        }
+
+        .card-header {
+            background: linear-gradient(to right, var(--light-color), #e9ecef);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            font-weight: 600;
+            padding: 1rem 1.25rem;
+        }
+
+        /* Button Styles */
+        .btn {
+            border-radius: 8px;
+            font-weight: 500;
+            transition: var(--transition);
+            padding: 0.5rem 1rem;
+        }
+
+        .btn-purple {
+            background-color: var(--purple-color);
+            border-color: var(--purple-color);
+            color: white;
+        }
+
+        .btn-purple:hover {
+            background-color: var(--purple-dark);
+            border-color: var(--purple-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(111, 66, 193, 0.4);
+        }
+
+        .btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        /* Study Card Styles */
+        .study-card {
+            cursor: pointer;
+            transition: transform 0.3s;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid transparent;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            transition: var(--transition);
+        }
+
+        .study-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--hover-shadow);
+            border-color: var(--purple-color);
+        }
+
+        /* Subject Item Styles */
+        .subject-item {
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            border: 1px solid #e9ecef;
+        }
+
+        .subject-item:hover {
+            background-color: #f8f9fa;
+            transform: translateX(5px);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Card Flip Animation */
+        .card-front, .card-back {
+            transition: opacity 0.3s;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .flipped .card-front {
+            opacity: 0;
+        }
+
+        .flipped .card-back {
+            opacity: 1;
+        }
+
+        .card-content {
+            position: relative;
+            width: 100%;
+        }
+
+        .card-back {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            opacity: 0;
+        }
+
+        /* Form Styles */
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            padding: 0.75rem 1rem;
+            transition: var(--transition);
+        }
+
+        .form-control:focus, .form-select:focus {
+            box-shadow: 0 0 0 0.25rem rgba(111, 66, 193, 0.25);
+            border-color: var(--purple-color);
+        }
+
+        /* List Group Styles */
+        .list-group-item {
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            transition: var(--transition);
+        }
+
+        .list-group-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        /* Badge Styles */
+        .badge {
+            font-weight: 500;
+            padding: 0.35em 0.65em;
+        }
+
+        /* Stats Card */
+        .stats-card .list-group-item {
+            border: none;
+            padding: 0.75rem 1rem;
+        }
+
+        /* Modal Styles */
+        .modal-content {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .modal-header {
+            border-bottom: 1px solid #e9ecef;
+            padding: 1.25rem;
+        }
+
+        .modal-body {
+            padding: 1.25rem;
+        }
+
+        /* Animations */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(111, 66, 193, 0.4);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(111, 66, 193, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(111, 66, 193, 0);
+            }
+        }
+
+        .floating {
+            animation: floating 3s ease-in-out infinite;
+        }
+
+        @keyframes floating {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .col-lg-8, .col-lg-4 {
+                margin-bottom: 1.5rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .navbar-brand {
+                font-size: 1.2rem;
+            }
+
+            .navbar-nav {
+                margin-top: 1rem;
+            }
+
+            .navbar-nav .nav-link {
+                margin: 0.2rem 0;
+            }
+
+            .card {
+                margin-bottom: 1rem;
+            }
+
+            .btn-responsive {
+                width: 100%;
+                margin-bottom: 0.5rem;
+            }
+
+            .study-card {
+                min-height: 150px;
+            }
+
+            .card-front, .card-back {
+                padding: 1.5rem;
+            }
+
+            .modal-dialog {
+                margin: 0.5rem;
+            }
+
+            .modal-body .row .col-4,
+            .modal-body .row .col-12 {
+                margin-bottom: 0.5rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .container {
+                padding-left: 15px;
+                padding-right: 15px;
+            }
+
+            .card-body {
+                padding: 1rem;
+            }
+
+            .card-header {
+                padding: 0.75rem 1rem;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
+
+            .lead {
+                font-size: 1rem;
+            }
+
+            .study-card {
+                min-height: 120px;
+            }
+
+            .card-front h4, .card-back h4 {
+                font-size: 1.25rem;
+            }
+
+            .modal-body .row .col-4 {
+                width: 100%;
+            }
+        }
+
+        /* Utility Classes */
+        .text-truncate-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .shadow-custom {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .border-radius-custom {
+            border-radius: 12px;
+        }
+
+        /* Page Header */
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        /* Grid Improvements */
+        .row {
+            margin-bottom: 1rem;
+        }
+
+        /* Flashcard specific styles */
+        .flashcard-item {
+            border-left: 4px solid var(--purple-color);
+            transition: var(--transition);
+        }
+
+        .flashcard-item:hover {
+            border-left-width: 6px;
+            background-color: rgba(111, 66, 193, 0.05);
+        }
+
+        /* Progress indicator */
+        .progress-indicator {
+            height: 4px;
+            background-color: #e9ecef;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(to right, var(--purple-color), var(--accent-color));
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">Study Bot Flashcards</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <div class="navbar-nav ms-auto">
+                    <a class="nav-link" href="/login">login</a>
+                    <a class="nav-link" href="/register">register</a>
+                    <a class="nav-link" href="/">Home</a>
+                    <a class="nav-link" href="/web/lectures">Lectures</a>
+                    <a class="nav-link active" href="/web/flashcards">Flashcards</a>
+                    <a class="nav-link" href="/web/quiz">Quiz</a>
+                    <a class="nav-link" href="/web/analytics">Analytics</a>
+                    <a class="nav-link" href="/logout">logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row page-header">
+            <div class="col-12">
+                <h2>Flashcards</h2>
+                <p class="lead">Study with digital flashcards</p>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Left Column - Subjects and Cards -->
+            <div class="col-lg-8">
+                <!-- Subjects Card -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="card-title mb-0"><i class="fas fa-folder me-2"></i>Available Subjects</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="subjectsList" class="list-group">
+                            <!-- Subjects will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Flashcards Card -->
+                <div class="card" id="cardsSection" style="display: none;">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0" id="cardsSubjectTitle">
+                            <i class="fas fa-sticky-note me-2"></i>Flashcards
+                        </h5>
+                        <div>
+                            <button class="btn btn-purple btn-sm text-white" onclick="startStudySession()">
+                                <i class="fas fa-play me-1"></i>Study
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="cardsList">
+                            <!-- Cards will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Study Tools -->
+            <div class="col-lg-4">
+                <!-- Study Tools Card -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="card-title mb-0"><i class="fas fa-tools me-2"></i>Study Tools</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-purple text-white" onclick="startStudySession()">
+                                <i class="fas fa-play-circle me-2"></i>Start Study Session
+                            </button>
+                            <button class="btn btn-warning text-white" onclick="startQuizFromFlashcards()">
+                                <i class="fas fa-question-circle me-2"></i>Take Quiz
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Stats Card -->
+                <div class="card stats-card">
+                    <div class="card-header bg-light">
+                        <h5 class="card-title mb-0"><i class="fas fa-chart-bar me-2"></i>Quick Stats</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group list-group-flush">
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                Total Subjects
+                                <span class="badge bg-primary rounded-pill" id="totalSubjects">0</span>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                Total Cards
+                                <span class="badge bg-success rounded-pill" id="totalCards">0</span>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                Last Studied
+                                <span class="badge bg-info rounded-pill" id="lastStudied">Never</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Study Session Modal -->
+    <div class="modal fade" id="studySessionModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Study Session - <span id="studySubjectName"></span></h5>
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-secondary me-3" id="studyProgress">1/1</span>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <div class="card study-card" onclick="flipCard()">
+                        <div class="card-body text-center py-5 card-content">
+                            <div class="card-front">
+                                <h4 class="card-title" id="cardQuestion">Click to start studying</h4>
+                                <p class="text-muted mt-3"><i class="fas fa-sync-alt me-1"></i>Click to reveal answer</p>
+                            </div>
+                            <div class="card-back">
+                                <h4 class="card-title" id="cardAnswer">Answer will appear here</h4>
+                                <p class="text-muted mt-3"><i class="fas fa-sync-alt me-1"></i>Click to show question</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-4">
+                        <div class="col-4">
+                            <button class="btn btn-secondary w-100 btn-responsive" onclick="previousCard()" id="prevCardBtn">
+                                <i class="fas fa-arrow-left me-1"></i>Previous
+                            </button>
+                        </div>
+                        <div class="col-4">
+                            <button class="btn btn-danger w-100 btn-responsive" onclick="markCardDifficult()" id="difficultBtn">
+                                <i class="fas fa-times me-1"></i>Difficult
+                            </button>
+                        </div>
+                        <div class="col-4">
+                            <button class="btn btn-success w-100 btn-responsive" onclick="markCardEasy()" id="easyBtn">
+                                <i class="fas fa-check me-1"></i>Easy
+                            </button>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <button class="btn btn-outline-primary w-100 btn-responsive" onclick="shuffleCards()">
+                                <i class="fas fa-random me-1"></i>Shuffle Cards
+                            </button>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <button class="btn btn-outline-info w-100 btn-responsive" onclick="nextCard()">
+                                <i class="fas fa-arrow-right me-1"></i>Next Card
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Your original JavaScript code remains unchanged
+        let currentSubject = '';
+        let studyCards = [];
+        let currentCardIndex = 0;
+        let isCardFlipped = false;
+
+        // Initialize and load subjects
+        async function initializeFlashcards() {
+            await loadSubjects();
+        }
+
+        // Load subjects
+        async function loadSubjects() {
+            try {
+                const response = await fetch('/api/flashcards/subjects');
+                const data = await response.json();
+
+                if (data.success) {
+                    displaySubjects(data.subjects);
+                    updateStats(data.subjects);
+
+                    // Check for subject in URL parameters
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const subjectParam = urlParams.get('subject');
+                    if (subjectParam) {
+                        loadCards(subjectParam);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading subjects:', error);
+            }
+        }
+
+        // Display subjects
+        function displaySubjects(subjects) {
+            const list = document.getElementById('subjectsList');
+            list.innerHTML = '';
+
+            if (subjects.length === 0) {
+                list.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No subjects found in flashcards data.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            subjects.forEach(subject => {
+                const subjectItem = document.createElement('div');
+                subjectItem.className = 'list-group-item subject-item d-flex justify-content-between align-items-center';
+                subjectItem.onclick = () => loadCards(subject.name);
+
+                subjectItem.innerHTML = `
+                    <div>
+                        <h6 class="mb-1">${subject.name}</h6>
+                        <small class="text-muted">${subject.card_count} cards</small>
+                    </div>
+                    <div>
+                        <span class="badge bg-light text-dark">
+                            <i class="fas fa-chevron-right"></i>
+                        </span>
+                    </div>
+                `;
+                list.appendChild(subjectItem);
+            });
+        }
+
+        // Load cards for a subject
+        async function loadCards(subjectName) {
+            currentSubject = subjectName;
+
+            try {
+                const response = await fetch(`/api/flashcards/cards?subject=${encodeURIComponent(subjectName)}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    displayCards(data.cards);
+                    document.getElementById('cardsSection').style.display = 'block';
+                    document.getElementById('cardsSubjectTitle').innerHTML = `<i class="fas fa-sticky-note me-2"></i>${subjectName} (${data.total_cards} cards)`;
+
+                    // Store cards for study session
+                    studyCards = data.cards;
+
+                    // Update last studied
+                    document.getElementById('lastStudied').textContent = 'Ready to study!';
+                }
+            } catch (error) {
+                console.error('Error loading cards:', error);
+            }
+        }
+
+        // Display cards
+        function displayCards(cards) {
+            const list = document.getElementById('cardsList');
+            list.innerHTML = '';
+
+            if (cards.length === 0) {
+                list.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="fas fa-sticky-note fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No flashcards found for this subject.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            cards.forEach((card, index) => {
+                const cardItem = document.createElement('div');
+                cardItem.className = 'card mb-3 flashcard-item fade-in';
+                cardItem.innerHTML = `
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h6 class="card-title text-primary">Q: ${card.question}</h6>
+                                <p class="card-text"><strong class="text-success">A:</strong> ${card.answer}</p>
+                            </div>
+                        </div>
+                        ${card.user_id ? `<small class="text-muted">From user: ${card.user_id}</small>` : ''}
+                    </div>
+                `;
+                list.appendChild(cardItem);
+            });
+        }
+
+        // Update stats
+        function updateStats(subjects) {
+            const totalSubjects = subjects.length;
+            const totalCards = subjects.reduce((sum, subject) => sum + subject.card_count, 0);
+
+            document.getElementById('totalSubjects').textContent = totalSubjects;
+            document.getElementById('totalCards').textContent = totalCards;
+        }
+
+        // Study session functions
+        function startStudySession() {
+            if (!currentSubject) {
+                alert('Please select a subject first.');
+                return;
+            }
+
+            if (studyCards.length === 0) {
+                alert('No flashcards available for this subject.');
+                return;
+            }
+
+            currentCardIndex = 0;
+            isCardFlipped = false;
+
+            const modal = new bootstrap.Modal(document.getElementById('studySessionModal'));
+            document.getElementById('studySubjectName').textContent = currentSubject;
+            modal.show();
+            updateStudyCard();
+        }
+
+        function flipCard() {
+            const studyCard = document.querySelector('.study-card');
+            isCardFlipped = !isCardFlipped;
+            studyCard.classList.toggle('flipped', isCardFlipped);
+        }
+
+        function updateStudyCard() {
+            if (studyCards.length === 0) {
+                document.getElementById('cardQuestion').textContent = 'No cards available';
+                document.getElementById('cardAnswer').textContent = 'Add some flashcards first';
+                return;
+            }
+
+            const card = studyCards[currentCardIndex];
+            document.getElementById('cardQuestion').textContent = card.question;
+            document.getElementById('cardAnswer').textContent = card.answer;
+            document.getElementById('studyProgress').textContent = `${currentCardIndex + 1}/${studyCards.length}`;
+
+            // Reset card to front
+            isCardFlipped = false;
+            document.querySelector('.study-card').classList.remove('flipped');
+
+            // Update button states
+            document.getElementById('prevCardBtn').disabled = currentCardIndex === 0;
+        }
+
+        function nextCard() {
+            if (currentCardIndex < studyCards.length - 1) {
+                currentCardIndex++;
+                updateStudyCard();
+            } else {
+                // End of session
+                alert('Study session completed!');
+                const modal = bootstrap.Modal.getInstance(document.getElementById('studySessionModal'));
+                modal.hide();
+            }
+        }
+
+        function previousCard() {
+            if (currentCardIndex > 0) {
+                currentCardIndex--;
+                updateStudyCard();
+            }
+        }
+
+        function markCardEasy() {
+            // Implementation for marking card as easy
+            // You could store this information and show easy cards less frequently
+            nextCard();
+        }
+
+        function markCardDifficult() {
+            // Implementation for marking card as difficult
+            // You could store this information and show difficult cards more frequently
+            nextCard();
+        }
+
+        function shuffleCards() {
+            // Shuffle the study cards array
+            for (let i = studyCards.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [studyCards[i], studyCards[j]] = [studyCards[j], studyCards[i]];
+            }
+            currentCardIndex = 0;
+            updateStudyCard();
+            alert('Cards shuffled!');
+        }
+
+        function startQuizFromFlashcards() {
+            if (!currentSubject) {
+                alert('Please select a subject first.');
+                return;
+            }
+            window.location.href = `/web/quiz?subject=${encodeURIComponent(currentSubject)}`;
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', initializeFlashcards);
+    </script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+Flask>=2.3
+Flask-Cors>=3.0
+Pillow>=10.0
+pdf2image>=1.16
+yt-dlp>=2025.11.23
+python-dotenv>=1.0
+requests>=2.31
+Flask-SQLAlchemy>=3.0
+Flask-Bcrypt>=1.0

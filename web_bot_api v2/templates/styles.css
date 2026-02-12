@@ -1,0 +1,146 @@
+/* Custom CSS for Study Bot */
+.hero-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 100px 0;
+    margin-bottom: 50px;
+}
+
+.feature-card {
+    transition: transform 0.3s ease;
+    border: none;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+}
+
+.bot-link {
+    background: linear-gradient(45deg, #0088cc, #00aced);
+    border: none;
+    padding: 15px 30px;
+    font-size: 1.1em;
+    transition: all 0.3s ease;
+}
+
+.bot-link:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 20px rgba(0,136,204,0.3);
+}
+
+.section-title {
+    position: relative;
+    margin-bottom: 2rem;
+}
+
+.section-title::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(45deg, #667eea, #764ba2);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .hero-section {
+        padding: 60px 0;
+        margin-bottom: 30px;
+    }
+
+    .hero-section h1 {
+        font-size: 2.5rem;
+    }
+
+    .feature-card {
+        margin-bottom: 20px;
+    }
+
+    .section-title::after {
+        width: 40px;
+    }
+
+    .web-platform-btn {
+        margin-top: 10px;
+    }
+
+    .navbar-nav {
+        text-align: center;
+        margin-top: 10px;
+    }
+}
+
+@media (max-width: 576px) {
+    .hero-section {
+        padding: 40px 0;
+    }
+
+    .hero-section h1 {
+        font-size: 2rem;
+    }
+
+    .bot-link, .btn-lg {
+        padding: 12px 20px;
+        font-size: 1em;
+    }
+
+    .d-flex.gap-3 {
+        gap: 15px !important;
+    }
+
+    .feature-icon i {
+        font-size: 2.5rem !important;
+    }
+}
+
+/* Animation for stats counter */
+@keyframes countUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.stats-counter {
+    animation: countUp 0.8s ease-out forwards;
+}
+
+/* Additional responsive improvements */
+.container {
+    max-width: 1200px;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* Smooth transitions for all interactive elements */
+a, button {
+    transition: all 0.3s ease;
+}
+
+/* Improve accessibility */
+.btn:focus, .nav-link:focus {
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+/* Ensure proper spacing on all screen sizes */
+.py-5 {
+    padding-top: 3rem !important;
+    padding-bottom: 3rem !important;
+}
+
+@media (max-width: 768px) {
+    .py-5 {
+        padding-top: 2rem !important;
+        padding-bottom: 2rem !important;
+    }
+}

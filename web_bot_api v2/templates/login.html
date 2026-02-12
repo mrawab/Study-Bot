@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="" />
+    <link rel="stylesheet" href="style.css" />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <title>Login</title>
+    <style>
+      :root {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        overflow: hidden;
+        flex-direction: column;
+        background-image: url(images/background.webp);
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: cover;
+      }
+      .error{
+        color: white;
+    background: transparent;
+    padding: 11px;
+    backdrop-filter: blur(20px);
+    border-radius: 20px 30px;
+    margin-bottom: 60px;
+    transform: scale(0.8);
+    animation: color-change 0.5s ease-out forwards;
+      }
+      p {
+        color: wheat;
+        font-size: 20px;
+        position: fixed;
+        animation: rotate 3s infinite ease;
+      }
+      p:hover {
+        animation: none;
+      }
+      #p_1 {
+        margin-left: -900px;
+        margin-top: -400px;
+        animation-delay: 0;
+        font-size: 25px;
+      }
+      #p_2 {
+        margin-left: 1080px;
+        margin-top: -500px;
+        font-size: 25px;
+      }
+      #p_3 {
+        margin-left: 1080px;
+        margin-top: 500px;
+      }
+      #p_4 {
+        margin-left: 900px;
+        margin-top: 400px;
+        font-size: 25px;
+      }
+      #p_5 {
+        margin-left: -900px;
+        margin-top: 400px;
+      }
+      #p_6 {
+        margin-left: -1080px;
+        margin-top: 500px;
+        font-size: 25px;
+      }
+      #p_7 {
+        margin-left: -1080px;
+        margin-top: -500px;
+      }
+      #p_8 {
+        margin-left: 900px;
+        margin-top: -400px;
+      }
+
+      form {
+        background-color: transparent;
+        backdrop-filter: blur(13px);
+        box-shadow: 2px 2px 1px white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        padding: 16px;
+        border-radius: 20px 30px;
+        font-size: 2rem;
+        color: aliceblue;
+        font-weight: bold;
+        transition: box-shadow 0.5s 0.5s ease-in-out;
+      }
+      form:hover {
+        box-shadow: 2px 2px 1px wheat inset;
+        transition: all 0.5s ease-in-out;
+      }
+      form h1 {
+        font-size: 30px;
+      }
+      form div {
+        display: flex;
+      }
+
+      .username,
+      .password {
+        margin: 20px;
+      }
+      .username label,
+      .password label {
+        margin-right: 15px;
+        text-transform: capitalize;
+      }
+      .username input,
+      .password input {
+        background-color: transparent;
+        outline: none;
+        border: none;
+        border: 1px solid white;
+        border-radius: 10px;
+        color: white;
+        padding: 0px 10px;
+        position: relative;
+      }
+      .username input:focus + i,
+      .username input:hover + i,
+      .password input:focus + i,
+      .password input:hover + i {
+        color: rgb(34, 141, 105);
+        transition: all 0.1s ease-out;
+      }
+      .username,
+      .password {
+        position: relative;
+      }
+      .username i,
+      .password i {
+        position: absolute;
+        font-size: 15px;
+        top: 50%;
+        left: 100%;
+        margin-top: -10px;
+        margin-left: 10px;
+      }
+      .forgot-sign-up {
+        margin: 15px 0px;
+        justify-content: space-around;
+        flex-direction: row-reverse;
+        width: 100%;
+      }
+      .forgot-sign-up a {
+        text-decoration: none;
+        color: aliceblue;
+        font-size: 20px;
+        transform: scale(0.8);
+        transition: transform 0.2s ease-out;
+      }
+      .forgot-sign-up a:hover {
+        transform: scale(1);
+        color: antiquewhite;
+      }
+      form:has(.forgot:hover) .password i {
+        color: rgb(184, 59, 59);
+        transition: all 0.2s ease-out;
+      }
+      form:has(.request:hover) .username i {
+        color: rgb(184, 59, 59);
+        transition: all 0.2s ease-out;
+      }
+      .buttons {
+        width: 100%;
+        margin-top: 20px;
+        justify-content: space-around;
+      }
+      .buttons button,
+      .buttons input {
+        outline: none;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 15px 10px;
+        font-weight: bold;
+        font-size: 20px;
+        cursor: pointer;
+        transform: scale(0.8);
+        transition: transform 0.2s ease-out;
+      }
+      .buttons a {
+        text-decoration: none;
+        color: black;
+      }
+
+      .buttons button:hover,
+      .buttons input:hover {
+        transform: scale(1);
+      }
+      form:has(.buttons input[type="submit"]:hover)
+        :where(
+          .username input:placeholder-shown,
+          .password input:placeholder-shown
+        )
+        + i {
+        color: rgb(128, 9, 0);
+        transition: all 0.2s ease-out;
+      }
+      /* animations */
+      @keyframes rotate {
+        0% {
+          transform: rotate(-360deg);
+        }
+        20% {
+          transform: rotate(-260deg);
+        }
+        40% {
+          transform: rotate(-160eg);
+        }
+        60% {
+          transform: rotate(-100deg);
+        }
+        80% {
+          transform: rotate(-60deg);
+        }
+        100% {
+          transform: rotate(0deg);
+        }
+      }
+      @keyframes color-change {
+        100% {
+          color: #da3b3b;
+          transform: scale(1);
+        }
+      }
+
+
+    </style>
+  </head>
+  <body style="background-image: url('{{ url_for('static', filename='images/background.webp') }}');">
+    {% set messages = get_flashed_messages() %}
+    {% for msg in messages %}
+      <h2 class="error">{{msg}}<h2>
+    {% endfor %}
+    <p id="p_1">+</p>
+    <p id="p_2">+</p>
+    <p id="p_3">+</p>
+    <p id="p_4">+</p>
+    <p id="p_5">+</p>
+    <p id="p_6">+</p>
+    <p id="p_7">+</p>
+    <p id="p_8">+</p>
+    <form action="#" method="POST">
+      <h1>Admin Login</h1>
+      <div class="username">
+        <label for="username">username</label>
+        <input
+          autofocus
+          title="min length 3 chars max length 20 chars"
+          type="text"
+          name="username"
+          id="username"
+          minlength="3"
+          maxlength="20"
+          placeholder="type your username"
+          required
+        />
+        <i class="fa-solid fa-user"></i>
+      </div>
+      <div class="password">
+        <label for="password">password</label>
+        <input
+          title="min length 8 chars max length 20 chars"
+          type="password"
+          name="password"
+          id="password"
+          minlength="8"
+          maxlength="20"
+          placeholder="type your password"
+          required
+        />
+        <i class="fa-solid fa-lock"></i>
+      </div>
+      <div class="forgot-sign-up">
+        <a href="#" class="forgot">forgot password?</a>
+        <a href="{{ url_for('register') }}" class="request">request signup</a>
+      </div>
+      <div class="buttons">
+        <input type="submit" value="login" />
+        <button type="button">
+          <a href="{{ url_for('index') }}" >back</a>
+        </button>
+      </div>
+    </form>
+  </body>
+</html>

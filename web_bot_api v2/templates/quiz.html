@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Bot - Quiz</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Custom CSS Variables - Unified with flashcards page */
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --accent-color: #4895ef;
+            --purple-color: #6f42c1;
+            --purple-dark: #5a2d91;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+            --success-color: #4cc9f0;
+            --warning-color: #f72585;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --hover-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        /* Global Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            color: var(--dark-color);
+            line-height: 1.6;
+        }
+
+        /* Navigation */
+        .navbar {
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color)) !important;
+            padding: 0.8rem 0;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            transition: var(--transition);
+        }
+
+        .navbar-brand:hover {
+            transform: translateY(-2px);
+        }
+
+        .navbar-nav .nav-link {
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            transition: var(--transition);
+            margin: 0 0.2rem;
+        }
+
+        .navbar-nav .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .navbar-nav .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.2);
+            font-weight: 600;
+        }
+
+        /* Card Styles */
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            transition: var(--transition);
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--hover-shadow);
+        }
+
+        .card-header {
+            background: linear-gradient(to right, var(--light-color), #e9ecef);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            font-weight: 600;
+            padding: 1rem 1.25rem;
+        }
+
+        /* Button Styles */
+        .btn {
+            border-radius: 8px;
+            font-weight: 500;
+            transition: var(--transition);
+            padding: 0.5rem 1rem;
+        }
+
+        .btn-purple {
+            background-color: var(--purple-color);
+            border-color: var(--purple-color);
+            color: white;
+        }
+
+        .btn-purple:hover {
+            background-color: var(--purple-dark);
+            border-color: var(--purple-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(111, 66, 193, 0.4);
+        }
+
+        .btn-primary {
+            background: linear-gradient(to right, var(--primary-color), var(--accent-color));
+            border: none;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.4);
+        }
+
+        .btn-lg {
+            padding: 0.75rem 1.5rem;
+            font-size: 1.1rem;
+        }
+
+        /* Option Card Styles */
+        .option-card {
+            cursor: pointer;
+            transition: var(--transition);
+            border: 2px solid transparent;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .option-card:hover {
+            border-color: var(--purple-color);
+            transform: translateY(-3px);
+            box-shadow: var(--hover-shadow);
+        }
+
+        .option-card.selected {
+            border-color: var(--purple-color);
+            background-color: #e7f1ff;
+            transform: translateY(-2px);
+        }
+
+        .option-card.correct {
+            border-color: #198754;
+            background-color: #d1e7dd;
+        }
+
+        .option-card.incorrect {
+            border-color: #dc3545;
+            background-color: #f8d7da;
+        }
+
+        /* Progress Bar */
+        .progress-bar-quiz {
+            transition: width 0.5s ease-in-out;
+            background: linear-gradient(to right, var(--purple-color), var(--accent-color));
+            border-radius: 4px;
+        }
+
+        .progress {
+            height: 8px;
+            border-radius: 4px;
+            background-color: #e9ecef;
+            overflow: hidden;
+        }
+
+        /* Form Styles */
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            padding: 0.75rem 1rem;
+            transition: var(--transition);
+        }
+
+        .form-control:focus, .form-select:focus {
+            box-shadow: 0 0 0 0.25rem rgba(111, 66, 193, 0.25);
+            border-color: var(--purple-color);
+        }
+
+        /* Badge Styles */
+        .badge {
+            font-weight: 500;
+            padding: 0.35em 0.65em;
+        }
+
+        /* Animations */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive Design */
+        /* Mobile navbar fixes */
+        @media (max-width: 992px) {
+            .navbar-collapse {
+                text-align: left !important;
+            }
+
+            .navbar-nav {
+                width: 100%;
+                text-align: left !important;
+            }
+
+            .nav-link {
+                text-align: left !important;
+                justify-content: flex-start !important;
+                padding-left: 0.5rem !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .navbar-brand {
+                font-size: 1.2rem;
+            }
+
+            .navbar-nav {
+                margin-top: 1rem;
+                text-align: center;
+            }
+
+            .navbar-nav .nav-link {
+                margin: 0.2rem 0;
+                padding: 0.75rem 1rem;
+            }
+
+            .btn-responsive {
+                width: 100%;
+                margin-bottom: 0.5rem;
+            }
+
+            .modal-body .row .col-4,
+            .modal-body .row .col-12 {
+                margin-bottom: 0.5rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .container {
+                padding-left: 15px;
+                padding-right: 15px;
+            }
+
+            .card-body {
+                padding: 1rem;
+            }
+
+            .card-header {
+                padding: 0.75rem 1rem;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
+
+            .lead {
+                font-size: 1rem;
+            }
+
+            .btn-lg {
+                padding: 0.6rem 1.2rem;
+                font-size: 1rem;
+            }
+        }
+
+        /* Page Header */
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        /* Quiz specific styles */
+        .quiz-item {
+            border-left: 4px solid var(--purple-color);
+            transition: var(--transition);
+        }
+
+        .quiz-item:hover {
+            border-left-width: 6px;
+            background-color: rgba(111, 66, 193, 0.05);
+        }
+
+        /* Stats Card */
+        .stats-card .list-group-item {
+            border: none;
+            padding: 0.75rem 1rem;
+        }
+
+        /* Answer Review Styles */
+        .answer-review-card {
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            transition: var(--transition);
+        }
+
+        .answer-review-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--hover-shadow);
+        }
+
+        /* Score Display */
+        .score-display {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(to right, var(--purple-color), var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* AI Feedback Styles */
+        .ai-feedback {
+            background-color: #f8f9fa;
+            border-left: 4px solid #6f42c1;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .confidence-badge {
+            font-size: 0.8rem;
+            margin-left: 5px;
+        }
+
+        /* Subject Status */
+        .subject-status {
+            font-size: 0.85rem;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">Study Bot</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <div class="navbar-nav ms-auto">
+                    <a class="nav-link" href="/login">login</a>
+                    <a class="nav-link" href="/register">register</a>
+                    <a class="nav-link" href="/">Home</a>
+                    <a class="nav-link" href="/web/lectures">Lectures</a>
+                    <a class="nav-link" href="/web/flashcards">Flashcards</a>
+                    <a class="nav-link active" href="/web/quiz">Quiz</a>
+                    <a class="nav-link" href="/web/analytics">Analytics</a>
+                    <a class="nav-link" href="/logout">logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row page-header">
+            <div class="col-12">
+                <h2>Quiz</h2>
+                <p class="lead">Test your knowledge with interactive quizzes</p>
+            </div>
+        </div>
+
+        <!-- Quiz Setup -->
+        <div class="row" id="quizSetup">
+            <div class="col-lg-8 mx-auto">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="card-title mb-0"><i class="fas fa-cog me-2"></i>Quiz Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="quizSettingsForm">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Subject</label>
+                                    <div class="input-group">
+                                        <select class="form-select" id="quizSubject" required>
+                                            <option value="">Loading subjects...</option>
+                                        </select>
+                                        <button class="btn btn-outline-secondary" type="button" onclick="refreshSubjects()"
+                                                id="refreshBtn" title="Refresh subjects list">
+                                            <i class="fas fa-sync-alt" id="refreshIcon"></i>
+                                        </button>
+                                    </div>
+                                    <div class="subject-status" id="subjectStatus">
+                                        <small>Loading available subjects...</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Number of Questions</label>
+                                    <select class="form-select" id="questionCount">
+                                        <option value="5">5 Questions</option>
+                                        <option value="10" selected>10 Questions</option>
+                                        <option value="15">15 Questions</option>
+                                        <option value="20">20 Questions</option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Quiz Type</label>
+                                    <div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="quizType" id="multipleChoice" value="multiple_choice" checked>
+                                            <label class="form-check-label" for="multipleChoice">
+                                                Multiple Choice
+                                            </label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="quizType" id="written" value="written">
+                                            <label class="form-check-label" for="written">
+                                                Written Answer (AI Graded)
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <strong>Note:</strong> Quizzes are generated from your flashcards. Make sure you have flashcards in your selected subject.
+                                        <div id="aiStatus" class="mt-2" style="display: none;">
+                                            <i class="fas fa-robot me-1"></i>
+                                            <small>AI grading is <span id="aiStatusText">available</span> for written answers.</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="d-grid gap-2">
+                                        <button type="submit" class="btn btn-purple btn-lg text-white" id="startQuizBtn">
+                                            <i class="fas fa-play me-2"></i>Start Quiz
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quiz Interface -->
+        <div class="row" id="quizInterface" style="display: none;">
+            <div class="col-lg-8 mx-auto">
+                <div class="card">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0" id="quizTitle">Quiz</h5>
+                        <div>
+                            <span class="badge bg-primary" id="questionProgress">1/10</span>
+                            <span class="badge bg-success ms-2" id="scoreDisplay">Score: 0</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="progress mb-4">
+                            <div id="quizProgressBar" class="progress-bar progress-bar-quiz" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <div id="questionContainer">
+                            <!-- Questions will be loaded here -->
+                        </div>
+                        <div class="mt-4">
+                            <button class="btn btn-purple btn-responsive text-white" id="nextButton" onclick="nextQuestion()" style="display: none;">
+                                Next Question <i class="fas fa-arrow-right ms-1"></i>
+                            </button>
+                            <button class="btn btn-success btn-responsive" id="submitQuizButton" onclick="submitQuiz()" style="display: none;">
+                                Submit Quiz <i class="fas fa-check ms-1"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div class="row" id="quizResults" style="display: none;">
+            <div class="col-lg-8 mx-auto">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="card-title mb-0"><i class="fas fa-chart-bar me-2"></i>Quiz Results</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-4">
+                            <h3 class="score-display mb-2" id="finalScore">0/0</h3>
+                            <p class="text-muted" id="percentageScore">0%</p>
+                            <div class="progress mb-4" style="height: 20px;">
+                                <div id="scoreProgress" class="progress-bar progress-bar-quiz" style="width: 0%"></div>
+                            </div>
+                            <div id="aiGradingInfo" class="alert alert-info mt-3" style="display: none;">
+                                <i class="fas fa-robot me-2"></i>
+                                <span id="aiGradingText">Some answers were graded by AI</span>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4 text-center">
+                            <div class="col-md-4">
+                                <div class="border rounded p-3">
+                                    <h5 id="correctAnswers" class="text-success">0</h5>
+                                    <small class="text-muted">Correct</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="border rounded p-3">
+                                    <h5 id="wrongAnswers" class="text-danger">0</h5>
+                                    <small class="text-muted">Incorrect</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="border rounded p-3">
+                                    <h5 id="accuracyRate" class="text-info">0%</h5>
+                                    <small class="text-muted">Accuracy</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="answerReview" class="mb-4" style="display: none;">
+                            <h6 class="mb-3">Answer Review:</h6>
+                            <div id="answersList">
+                                <!-- Answers will be displayed here -->
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-purple btn-responsive text-white" onclick="restartQuiz()">
+                                <i class="fas fa-redo me-2"></i>Take Another Quiz
+                            </button>
+                            <button class="btn btn-outline-secondary btn-responsive" onclick="viewFlashcards()">
+                                <i class="fas fa-sticky-note me-2"></i>Review Flashcards
+                            </button>
+                            <button class="btn btn-outline-info btn-responsive" onclick="toggleAnswerReview()">
+                                <i class="fas fa-list me-2"></i>Review Answers
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    let quizQuestions = [];
+    let currentQuestionIndex = 0;
+    let userScore = 0;
+    let userAnswers = [];
+    let quizSession = null;
+    let showAnswerReview = false;
+    let aiAvailable = false;
+
+    // Initialize and load subjects
+    async function initializeQuiz() {
+        console.log('Initializing quiz...');
+        try {
+            await loadSubjects();
+            await checkAIAvailability();
+            console.log('Quiz initialized successfully');
+        } catch (error) {
+            console.error('Initialization error:', error);
+        }
+    }
+
+    // Check if AI grading is available
+    async function checkAIAvailability() {
+        try {
+            const response = await fetch('/api/quiz/grade_written', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    question: 'Test question',
+                    user_answer: 'Test answer',
+                    correct_answer: 'Test correct answer'
+                })
+            });
+
+            const data = await response.json();
+            aiAvailable = data.success || false;
+
+            const aiStatus = document.getElementById('aiStatus');
+            const aiStatusText = document.getElementById('aiStatusText');
+
+            if (aiAvailable) {
+                aiStatus.style.display = 'block';
+                aiStatusText.textContent = 'available';
+                aiStatusText.className = 'text-success';
+            } else {
+                aiStatus.style.display = 'block';
+                aiStatusText.textContent = 'not available';
+                aiStatusText.className = 'text-warning';
+            }
+        } catch (error) {
+            console.log('AI check failed:', error);
+            aiAvailable = false;
+        }
+    }
+
+    // Load subjects for dropdown - FIXED VERSION
+    async function loadSubjects() {
+        try {
+            const subjectSelect = document.getElementById('quizSubject');
+            const subjectStatus = document.getElementById('subjectStatus');
+
+            // Show loading state
+            subjectSelect.innerHTML = '<option value="">Loading subjects...</option>';
+            subjectStatus.innerHTML = '<small class="text-info"><i class="fas fa-spinner fa-spin me-1"></i>Loading subjects...</small>';
+
+            console.log('Fetching subjects from /api/flashcards/subjects');
+
+            const response = await fetch('/api/flashcards/subjects');
+            const data = await response.json();
+
+            console.log('API Response:', data);
+
+            if (data.success && data.subjects && Array.isArray(data.subjects)) {
+                console.log(`Found ${data.subjects.length} subjects:`, data.subjects);
+
+                if (data.subjects.length > 0) {
+                    // Clear and add options
+                    subjectSelect.innerHTML = '<option value="">Select a Subject</option>';
+
+                    // Add subjects using innerHTML for simplicity
+                    data.subjects.forEach(subject => {
+                        subjectSelect.innerHTML += `<option value="${subject.name}">${subject.name} (${subject.card_count} cards)</option>`;
+                    });
+
+                    // Check for subject in URL parameters
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const subjectParam = urlParams.get('subject');
+                    if (subjectParam) {
+                        subjectSelect.value = subjectParam;
+                        console.log(`Set subject from URL: ${subjectParam}`);
+                    }
+
+                    // Update status
+                    subjectStatus.innerHTML = `<small class="text-success"><i class="fas fa-check me-1"></i>${data.subjects.length} subjects loaded</small>`;
+                    console.log(`Successfully loaded ${data.subjects.length} subjects`);
+
+                } else {
+                    subjectSelect.innerHTML = '<option value="">No subjects available</option>';
+                    subjectStatus.innerHTML = '<small class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>No flashcards found. Please create flashcards first.</small>';
+                    console.warn('No subjects found in response');
+                }
+
+            } else {
+                console.warn('Invalid API response:', data);
+                subjectSelect.innerHTML = '<option value="">Error loading subjects</option>';
+                subjectStatus.innerHTML = '<small class="text-danger"><i class="fas fa-times me-1"></i>Error: Invalid response from server</small>';
+            }
+
+        } catch (error) {
+            console.error('Network error loading subjects:', error);
+            const subjectSelect = document.getElementById('quizSubject');
+            const subjectStatus = document.getElementById('subjectStatus');
+
+            subjectSelect.innerHTML = '<option value="">Connection Error</option>';
+            subjectStatus.innerHTML = `<small class="text-danger"><i class="fas fa-times me-1"></i>Failed to load: ${error.message}</small>`;
+        }
+    }
+
+    // Refresh subjects list with visual feedback
+    async function refreshSubjects() {
+        const refreshBtn = document.getElementById('refreshBtn');
+        const refreshIcon = document.getElementById('refreshIcon');
+        const subjectStatus = document.getElementById('subjectStatus');
+
+        // Show loading state
+        refreshBtn.disabled = true;
+        refreshIcon.className = 'fas fa-spinner fa-spin';
+        subjectStatus.innerHTML = '<small class="text-info"><i class="fas fa-spinner fa-spin me-1"></i>Refreshing subjects...</small>';
+
+        console.log('Refreshing subjects...');
+
+        try {
+            await loadSubjects();
+
+            // Success state
+            refreshIcon.className = 'fas fa-sync-alt';
+
+        } catch (error) {
+            // Error state
+            refreshIcon.className = 'fas fa-sync-alt';
+            subjectStatus.innerHTML = `<small class="text-danger"><i class="fas fa-exclamation-triangle me-1"></i>Refresh failed: ${error.message}</small>`;
+
+            console.error('Refresh failed:', error);
+        } finally {
+            refreshBtn.disabled = false;
+        }
+    }
+
+    // Helper function to detect if text is Arabic
+    function isArabic(text) {
+        if (!text || typeof text !== 'string') return false;
+        // Arabic Unicode range: 0600-06FF, 0750-077F, 08A0-08FF, FB50-FDFF, FE70-FEFF
+        const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+        return arabicRegex.test(text);
+    }
+
+    // Helper function to shuffle array randomly
+    function shuffleArray(array) {
+        const shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+    }
+
+    // Helper function to escape HTML entities
+    function escapeHtml(text) {
+        if (!text) return '';
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.toString().replace(/[&<>"']/g, m => map[m]);
+    }
+
+    // Start quiz
+    async function startQuiz(event) {
+        if (event) event.preventDefault();
+
+        const subject = document.getElementById('quizSubject').value;
+        const questionCount = document.getElementById('questionCount').value;
+        const quizType = document.querySelector('input[name="quizType"]:checked').value;
+        const startBtn = document.getElementById('startQuizBtn');
+
+        console.log('Starting quiz with:', { subject, questionCount, quizType });
+
+        // Validate subject selection
+        if (!subject || subject === "" || subject.includes("Loading") || subject.includes("Error") || subject.includes("No subjects")) {
+            alert('Please select a valid subject from the list.');
+            return;
+        }
+
+        // Show loading state
+        const originalText = startBtn.innerHTML;
+        startBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Starting Quiz...';
+        startBtn.disabled = true;
+
+        try {
+            const response = await fetch('/api/quiz/start', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    subject: subject,
+                    question_count: parseInt(questionCount),
+                    type: quizType
+                })
+            });
+
+            const data = await response.json();
+            console.log('Quiz start response:', data);
+
+            // Reset button
+            startBtn.innerHTML = originalText;
+            startBtn.disabled = false;
+
+            if (data.success) {
+                quizQuestions = data.questions;
+                quizSession = data.quiz_session;
+                currentQuestionIndex = 0;
+                userScore = 0;
+                userAnswers = [];
+
+                console.log(`Started quiz with ${quizQuestions.length} questions`);
+
+                document.getElementById('quizSetup').style.display = 'none';
+                document.getElementById('quizInterface').style.display = 'block';
+                document.getElementById('quizResults').style.display = 'none';
+
+                document.getElementById('quizTitle').textContent = `Quiz: ${subject}`;
+                updateProgressBar();
+                displayCurrentQuestion();
+            } else {
+                console.error('Quiz start failed:', data.error);
+                alert(data.error || 'Error starting quiz. Please try again.');
+            }
+        } catch (error) {
+            console.error('Network error starting quiz:', error);
+
+            // Reset button
+            startBtn.innerHTML = originalText;
+            startBtn.disabled = false;
+
+            alert('Error starting quiz. Please check your connection and try again.');
+        }
+    }
+
+    // Display current question - FIXED VERSION
+    function displayCurrentQuestion() {
+        if (currentQuestionIndex >= quizQuestions.length) return;
+
+        const question = quizQuestions[currentQuestionIndex];
+        const container = document.getElementById('questionContainer');
+        const progress = document.getElementById('questionProgress');
+
+        progress.textContent = `${currentQuestionIndex + 1}/${quizQuestions.length}`;
+        document.getElementById('scoreDisplay').textContent = `Score: ${userScore}`;
+        updateProgressBar();
+
+        // Check if question contains Arabic text
+        const questionHasArabic = isArabic(question.question);
+
+        if (question.type === 'multiple_choice') {
+            // Shuffle options for randomness
+            const shuffledOptions = shuffleArray(question.options);
+
+            container.innerHTML = `
+                <h4 class="mb-4" style="${questionHasArabic ? 'text-align: right; direction: rtl;' : 'text-align: left; direction: ltr;'}">
+                    ${escapeHtml(question.question)}
+                </h4>
+                <div class="options-container">
+                    ${shuffledOptions.map((option, index) => {
+                        const optionHasArabic = isArabic(option);
+                        const escapedOption = escapeHtml(option);
+                        const optionId = `option_${currentQuestionIndex}_${index}`;
+                        return `
+                        <div class="card option-card mb-2 p-3"
+                             onclick="selectOption('${optionId}')"
+                             data-option-id="${optionId}"
+                             style="${optionHasArabic ? 'text-align: right; direction: rtl;' : 'text-align: left; direction: ltr;'}">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="answer_${currentQuestionIndex}"
+                                       id="${optionId}"
+                                       value="${escapedOption}" style="display: none;">
+                                <label class="form-check-label w-100" for="${optionId}">
+                                    ${escapedOption}
+                                </label>
+                            </div>
+                        </div>
+                    `}).join('')}
+                </div>
+            `;
+
+            // Check if there's a previously selected answer for this question
+            const previousAnswer = userAnswers[currentQuestionIndex];
+            if (previousAnswer && previousAnswer.userAnswer) {
+                // Find and select the previously selected option
+                setTimeout(() => {
+                    const options = document.querySelectorAll('.option-card');
+                    options.forEach(option => {
+                        const input = option.querySelector('input');
+                        if (input && input.value === previousAnswer.userAnswer) {
+                            selectOption(input.id);
+                        }
+                    });
+                }, 100);
+            }
+
+        } else {
+            container.innerHTML = `
+                <h4 class="mb-4" style="${questionHasArabic ? 'text-align: right; direction: rtl;' : 'text-align: left; direction: ltr;'}">
+                    ${escapeHtml(question.question)}
+                </h4>
+                <div class="mb-3">
+                    <label for="writtenAnswer" class="form-label">Your Answer:</label>
+                    <textarea class="form-control" id="writtenAnswer" rows="3"
+                              placeholder="Type your answer here..."
+                              style="${questionHasArabic ? 'text-align: right; direction: rtl;' : 'text-align: left; direction: ltr;'}"></textarea>
+                </div>
+                ${aiAvailable ? '<div class="alert alert-info"><i class="fas fa-robot me-1"></i> This answer will be graded by AI</div>' : ''}
+            `;
+
+            // Restore previous answer for written questions
+            const previousAnswer = userAnswers[currentQuestionIndex];
+            if (previousAnswer && previousAnswer.userAnswer) {
+                document.getElementById('writtenAnswer').value = previousAnswer.userAnswer;
+            }
+        }
+
+        // Show/hide buttons
+        document.getElementById('nextButton').style.display = 'none';
+        document.getElementById('submitQuizButton').style.display = 'none';
+
+        if (currentQuestionIndex === quizQuestions.length - 1) {
+            document.getElementById('submitQuizButton').style.display = 'inline-block';
+        } else {
+            document.getElementById('nextButton').style.display = 'inline-block';
+        }
+    }
+
+    // Select option for multiple choice - FIXED VERSION
+    function selectOption(optionId) {
+        console.log('Selecting option:', optionId);
+
+        // Remove selected class from all options in current question
+        const questionOptions = document.querySelectorAll(`[data-option-id^="option_${currentQuestionIndex}_"]`);
+        questionOptions.forEach(card => {
+            card.classList.remove('selected');
+        });
+
+        // Add selected class to clicked option
+        const selectedCard = document.querySelector(`[data-option-id="${optionId}"]`);
+        if (selectedCard) {
+            selectedCard.classList.add('selected');
+
+            // Check the radio input
+            const radioInput = document.getElementById(optionId);
+            if (radioInput) {
+                radioInput.checked = true;
+                console.log('Selected value:', radioInput.value);
+            }
+
+            console.log('Option selected successfully');
+        } else {
+            console.error('Could not find option card with ID:', optionId);
+        }
+    }
+
+    // Update progress bar
+    function updateProgressBar() {
+        const progress = ((currentQuestionIndex) / quizQuestions.length) * 100;
+        document.getElementById('quizProgressBar').style.width = `${progress}%`;
+    }
+
+    // Grade written answer using AI
+    async function gradeWrittenAnswer(question, userAnswer, correctAnswer) {
+        try {
+            const response = await fetch('/api/quiz/grade_written', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    question: question,
+                    user_answer: userAnswer,
+                    correct_answer: correctAnswer
+                })
+            });
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Error grading with AI:', error);
+            return {
+                success: false,
+                isCorrect: false,
+                feedback: 'Error connecting to AI service',
+                confidence: 0.0
+            };
+        }
+    }
+
+    // Simple answer check (fallback when AI is not available)
+    function simpleAnswerCheck(userAnswer, correctAnswer) {
+        if (!userAnswer || !correctAnswer) return false;
+
+        const userLower = userAnswer.toLowerCase().trim();
+        const correctLower = correctAnswer.toLowerCase().trim();
+
+        // Check for exact match
+        if (userLower === correctLower) return true;
+
+        // Check for partial match (if answer contains key words)
+        const userWords = userLower.split(/\s+/);
+        const correctWords = correctLower.split(/\s+/);
+
+        // Count matching words
+        let matches = 0;
+        for (const word of correctWords) {
+            if (word.length > 3 && userLower.includes(word)) {
+                matches++;
+            }
+        }
+
+        // If more than 50% of significant words match, consider it correct
+        return matches / correctWords.length >= 0.5;
+    }
+
+    // Check answer and proceed - FIXED VERSION
+function checkAnswer() {
+    const question = quizQuestions[currentQuestionIndex];
+    let userAnswer = '';
+    let isCorrect = false;
+    let feedback = '';
+    let confidence = 0.0;
+    let aiGraded = false;
+
+    if (question.type === 'multiple_choice') {
+        const selectedOption = document.querySelector(`[data-option-id^="option_${currentQuestionIndex}_"].selected`);
+        if (!selectedOption) {
+            alert('Please select an answer.');
+            return false;
+        }
+
+        // Get the selected value from the radio input
+        const radioInput = selectedOption.querySelector('input[type="radio"]');
+        userAnswer = radioInput ? radioInput.value : '';
+
+        // Compare with correct answer (trim and normalize spaces)
+        const correctAnswer = question.correct_answer;
+        const normalizedUserAnswer = userAnswer ? userAnswer.trim().replace(/\s+/g, ' ') : '';
+        const normalizedCorrectAnswer = correctAnswer ? correctAnswer.trim().replace(/\s+/g, ' ') : '';
+
+        // Check for exact match (case-sensitive for English, case-insensitive for Arabic)
+        if (isArabic(correctAnswer)) {
+            isCorrect = normalizedUserAnswer.toLowerCase() === normalizedCorrectAnswer.toLowerCase();
+        } else {
+            isCorrect = normalizedUserAnswer === normalizedCorrectAnswer;
+        }
+
+        // Visual feedback for multiple choice when checking answer
+        if (currentQuestionIndex === quizQuestions.length - 1 || question.type === 'multiple_choice') {
+            document.querySelectorAll(`[data-option-id^="option_${currentQuestionIndex}_"]`).forEach(card => {
+                const optionInput = card.querySelector('input');
+                const optionValue = optionInput ? optionInput.value : '';
+
+                const normalizedCardValue = optionValue ? optionValue.trim().replace(/\s+/g, ' ') : '';
+                const normalizedCorrect = correctAnswer ? correctAnswer.trim().replace(/\s+/g, ' ') : '';
+
+                // Check if this is the correct answer
+                let isOptionCorrect = false;
+                if (isArabic(correctAnswer)) {
+                    isOptionCorrect = normalizedCardValue.toLowerCase() === normalizedCorrect.toLowerCase();
+                } else {
+                    isOptionCorrect = normalizedCardValue === normalizedCorrect;
+                }
+
+                if (isOptionCorrect) {
+                    card.classList.add('correct');
+                } else if (optionValue === userAnswer && !isCorrect) {
+                    card.classList.add('incorrect');
+                }
+            });
+        }
+    } else {
+        userAnswer = document.getElementById('writtenAnswer') ? document.getElementById('writtenAnswer').value.trim() : '';
+        if (!userAnswer) {
+            alert('Please enter your answer.');
+            return false;
+        }
+
+        // For written answers, initially mark as false (will be graded by AI later)
+        isCorrect = false; // Start with false, will be updated by AI
+        aiGraded = false;
+    }
+
+    // Store or update the answer
+    if (userAnswers[currentQuestionIndex]) {
+        // Update existing answer
+        const previousCorrect = userAnswers[currentQuestionIndex].isCorrect;
+        userAnswers[currentQuestionIndex] = {
+            question: question.question,
+            userAnswer: userAnswer,
+            correctAnswer: question.correct_answer,
+            isCorrect: isCorrect,
+            type: question.type,
+            feedback: feedback,
+            confidence: confidence,
+            aiGraded: aiGraded,
+            previouslyCorrect: previousCorrect // Store the previous state
+        };
+    } else {
+        // Add new answer
+        userAnswers.push({
+            question: question.question,
+            userAnswer: userAnswer,
+            correctAnswer: question.correct_answer,
+            isCorrect: isCorrect,
+            type: question.type,
+            feedback: feedback,
+            confidence: confidence,
+            aiGraded: aiGraded,
+            previouslyCorrect: isCorrect // Same as current for new answers
+        });
+    }
+
+    return true;
+}
+
+    // Next question
+    function nextQuestion() {
+        if (checkAnswer()) {
+            currentQuestionIndex++;
+            displayCurrentQuestion();
+        }
+    }
+
+    // Submit quiz with AI grading for written answers - FIXED VERSION
+async function submitQuiz() {
+    if (!checkAnswer()) return;
+
+    // Show loading state
+    const submitBtn = document.getElementById('submitQuizButton');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Grading with AI...';
+    submitBtn.disabled = true;
+
+    // First, calculate initial score for multiple choice questions
+    let initialScore = 0;
+    for (let i = 0; i < userAnswers.length; i++) {
+        const answer = userAnswers[i];
+        const question = quizQuestions[i];
+
+        if (question.type === 'multiple_choice') {
+            if (answer.isCorrect) {
+                initialScore++;
+            }
+        }
+    }
+
+    // Grade written answers with AI
+    let aiGradedCount = 0;
+    let finalScore = initialScore; // Start with multiple choice score
+
+    for (let i = 0; i < userAnswers.length; i++) {
+        const answer = userAnswers[i];
+        const question = quizQuestions[i];
+
+        if (question.type === 'written' && aiAvailable) {
+            try {
+                const aiResult = await gradeWrittenAnswer(
+                    answer.question,
+                    answer.userAnswer,
+                    answer.correctAnswer
+                );
+
+                if (aiResult.success) {
+                    answer.isCorrect = aiResult.isCorrect;
+                    answer.feedback = aiResult.feedback;
+                    answer.confidence = aiResult.confidence;
+                    answer.aiGraded = true;
+                    aiGradedCount++;
+
+                    // Update score based on AI grading
+                    if (answer.isCorrect) {
+                        finalScore++;
+                    }
+                    // If answer was marked correct before but AI says it's wrong,
+                    // it was already false so no need to subtract
+                } else {
+                    console.error('AI grading failed:', aiResult);
+                    answer.aiGraded = false;
+                    answer.feedback = aiResult.feedback || 'AI grading failed';
+                }
+            } catch (error) {
+                console.error('Error grading with AI:', error);
+                // Fallback to simple check
+                answer.isCorrect = simpleAnswerCheck(answer.userAnswer, answer.correctAnswer);
+                answer.feedback = 'AI grading failed. Using simple check.';
+                answer.aiGraded = false;
+
+                if (answer.isCorrect) {
+                    finalScore++;
+                }
+            }
+        }
+    }
+
+    // Update userScore with final score
+    userScore = finalScore;
+
+    // Show results
+    document.getElementById('quizInterface').style.display = 'none';
+    document.getElementById('quizResults').style.display = 'block';
+
+    const percentage = (userScore / quizQuestions.length) * 100;
+
+    // Update display
+    document.getElementById('finalScore').textContent = `${userScore}/${quizQuestions.length}`;
+    document.getElementById('percentageScore').textContent = `${percentage.toFixed(1)}%`;
+    document.getElementById('scoreProgress').style.width = `${percentage}%`;
+    document.getElementById('correctAnswers').textContent = userScore;
+    document.getElementById('wrongAnswers').textContent = quizQuestions.length - userScore;
+    document.getElementById('accuracyRate').textContent = `${percentage.toFixed(1)}%`;
+
+    // Show AI grading info if used
+    if (aiGradedCount > 0) {
+        const aiInfo = document.getElementById('aiGradingInfo');
+        const aiText = document.getElementById('aiGradingText');
+        aiText.textContent = `${aiGradedCount} written ${aiGradedCount === 1 ? 'answer was' : 'answers were'} graded by AI`;
+        aiInfo.style.display = 'block';
+    } else if (quizQuestions.some(q => q.type === 'written')) {
+        const aiInfo = document.getElementById('aiGradingInfo');
+        const aiText = document.getElementById('aiGradingText');
+        aiText.textContent = 'AI grading not available for written answers';
+        aiInfo.style.display = 'block';
+        aiInfo.className = 'alert alert-warning mt-3';
+    }
+
+    // Submit results to server
+    try {
+        const response = await fetch('/api/quiz/submit', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                quiz_data: {
+                    score: userScore,
+                    total_questions: quizQuestions.length,
+                    subject: quizSession.subject,
+                    answers: userAnswers
+                }
+            })
+        });
+
+        const data = await response.json();
+        console.log('Quiz submission response:', data);
+
+    } catch (error) {
+        console.error('Error submitting quiz results:', error);
+    }
+
+    // Reset button
+    submitBtn.innerHTML = originalText;
+    submitBtn.disabled = false;
+}
+
+    // Toggle answer review
+    function toggleAnswerReview() {
+        showAnswerReview = !showAnswerReview;
+        const reviewSection = document.getElementById('answerReview');
+        const answersList = document.getElementById('answersList');
+
+        if (showAnswerReview) {
+            answersList.innerHTML = userAnswers.map((answer, index) => {
+                const questionHasArabic = isArabic(answer.question);
+                const answerHasArabic = isArabic(answer.userAnswer) || isArabic(answer.correctAnswer);
+                const textDirection = questionHasArabic || answerHasArabic ? 'rtl' : 'ltr';
+                const textAlign = questionHasArabic || answerHasArabic ? 'right' : 'left';
+
+                // AI feedback if available
+                const feedbackHtml = answer.feedback ?
+                    `<div class="ai-feedback">
+                        <strong>Feedback:</strong> ${escapeHtml(answer.feedback)}
+                        ${answer.confidence ? `<span class="badge bg-info confidence-badge">${Math.round(answer.confidence * 100)}% confidence</span>` : ''}
+                    </div>` : '';
+
+                // AI grading badge
+                const aiBadge = answer.aiGraded ?
+                    '<span class="badge bg-purple ms-2"><i class="fas fa-robot me-1"></i>AI Graded</span>' : '';
+
+                return `
+                <div class="card mb-3 answer-review-card ${answer.isCorrect ? 'border-success' : 'border-danger'}"
+                     style="text-align: ${textAlign}; direction: ${textDirection};">
+                    <div class="card-body">
+                        <h6 class="card-title">Question ${index + 1}: ${escapeHtml(answer.question)}</h6>
+                        <p class="mb-1"><strong>Your answer:</strong> ${escapeHtml(answer.userAnswer)}</p>
+                        <p class="mb-1"><strong>Correct answer:</strong> ${escapeHtml(answer.correctAnswer)}</p>
+                        ${feedbackHtml}
+                        <span class="badge ${answer.isCorrect ? 'bg-success' : 'bg-danger'} mt-2">
+                            ${answer.isCorrect ? 'Correct ✓' : 'Incorrect ✗'}
+                            ${aiBadge}
+                        </span>
+                    </div>
+                </div>
+            `}).join('');
+            reviewSection.style.display = 'block';
+        } else {
+            reviewSection.style.display = 'none';
+        }
+    }
+
+    // Restart quiz
+    function restartQuiz() {
+        document.getElementById('quizResults').style.display = 'none';
+        document.getElementById('quizSetup').style.display = 'block';
+        showAnswerReview = false;
+        document.getElementById('answerReview').style.display = 'none';
+        document.getElementById('aiGradingInfo').style.display = 'none';
+
+        // Reset variables
+        quizQuestions = [];
+        currentQuestionIndex = 0;
+        userScore = 0;
+        userAnswers = [];
+        quizSession = null;
+    }
+
+    // View flashcards
+    function viewFlashcards() {
+        if (quizSession && quizSession.subject) {
+            window.location.href = `/web/flashcards?subject=${encodeURIComponent(quizSession.subject)}`;
+        } else {
+            window.location.href = '/web/flashcards';
+        }
+    }
+
+    // Debug function
+    window.debugSubjects = async function() {
+        console.log('=== DEBUG: Testing subjects API ===');
+        try {
+            const response = await fetch('/api/flashcards/subjects');
+            const data = await response.json();
+            console.log('API Response:', data);
+
+            if (data.success) {
+                console.log('Subjects found:', data.subjects);
+                console.log('Select element options:');
+                const select = document.getElementById('quizSubject');
+                for (let i = 0; i < select.options.length; i++) {
+                    console.log(`Option ${i}: ${select.options[i].text} = ${select.options[i].value}`);
+                }
+            }
+        } catch (error) {
+            console.error('Debug failed:', error);
+        }
+    };
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('=== Quiz Page Loaded ===');
+
+        // Initialize quiz
+        initializeQuiz();
+
+        // Setup form submit
+        document.getElementById('quizSettingsForm').addEventListener('submit', startQuiz);
+
+        // Debug after delay
+        setTimeout(() => {
+            const select = document.getElementById('quizSubject');
+            console.log('Initial select state:', {
+                value: select.value,
+                options: select.options.length,
+                innerHTML: select.innerHTML.substring(0, 100) + '...'
+            });
+        }, 2000);
+    });
+</script>
+</body>
+</html>
